@@ -1,1403 +1,1351 @@
 <!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#eef7fb">
-  <title>SmartSit AR Coach</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --ink:#17324d;
-      --muted:#718096;
-      --blue:#3387e8;
-      --cyan:#42c9d7;
-      --soft:#f4f8fc;
-      --card:#ffffff;
-      --good:#22a06b;
-      --warn:#f2a93b;
-      --bad:#e45858;
-      --line:#dce8f1;
-      --shadow:0 18px 50px rgba(36,83,125,.13);
-    }
-    * { box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
-    body {
-      margin:0;
-      min-height:100vh;
-      font-family:'Noto Sans Thai',sans-serif;
-      color:var(--ink);
-      background:
-        radial-gradient(circle at 0 0,#e9f7ff 0,transparent 38%),
-        radial-gradient(circle at 100% 0,#e7fbf6 0,transparent 32%),
-        linear-gradient(135deg,#f8fbff,#eef8f8);
-    }
-    button,input,select { font:inherit; }
-    button { -webkit-tap-highlight-color:transparent; }
-    .hidden { display:none !important; }
-    .shell { max-width:1500px; margin:auto; padding:18px; }
-    .topbar {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      margin-bottom:16px;
-    }
-    .brand { display:flex; gap:12px; align-items:center; }
-    .logo {
-      width:50px;
-      height:50px;
-      border-radius:17px;
-      display:grid;
-      place-items:center;
-      color:#fff;
-      font-size:26px;
-      background:linear-gradient(135deg,var(--blue),var(--cyan));
-      box-shadow:0 10px 25px rgba(51,135,232,.28);
-    }
-    .brand h1 { font-size:21px; margin:0; }
-    .brand p { margin:2px 0 0; color:var(--muted); font-size:13px; }
-    .header-actions { display:flex; align-items:center; gap:8px; }
-    .version {
-      font-size:11px;
-      background:#eaf4ff;
-      color:#2b73b8;
-      border:1px solid #cfe4f7;
-      padding:5px 8px;
-      border-radius:999px;
-    }
-    .user-pill {
-      background:#fff;
-      border:1px solid #dceaf5;
-      padding:9px 13px;
-      border-radius:999px;
-      font-size:13px;
-      box-shadow:0 6px 22px rgba(30,70,110,.08);
-    }
-    .icon-btn {
-      width:40px;
-      height:40px;
-      border:1px solid var(--line);
-      border-radius:13px;
-      background:#fff;
-      cursor:pointer;
-      color:var(--ink);
-    }
-    .layout {
-      display:grid;
-      grid-template-columns:minmax(0,1.7fr) minmax(300px,.8fr);
-      gap:16px;
-    }
-    .card {
-      background:rgba(255,255,255,.94);
-      border:1px solid rgba(207,226,240,.85);
-      border-radius:24px;
-      box-shadow:var(--shadow);
-    }
-    .camera-card { overflow:hidden; }
-    .camera-head {
-      padding:14px 17px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      border-bottom:1px solid #e9f1f6;
-    }
-    .live { display:flex; gap:8px; align-items:center; font-weight:600; }
-    .dot {
-      width:9px;
-      height:9px;
-      border-radius:50%;
-      background:var(--bad);
-      box-shadow:0 0 0 5px rgba(228,88,88,.13);
-      animation:pulse 1.5s infinite;
-    }
-    @keyframes pulse { 50% { opacity:.45; } }
-    .camera-wrap {
-      position:relative;
-      overflow:hidden;
-      background:#132333;
-      aspect-ratio:16/9;
-      min-height:350px;
-    }
-    .camera-wrap video,
-    .camera-wrap canvas {
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:cover;
-    }
-    .camera-wrap video { transform:scaleX(-1); }
-    .camera-wrap canvas { pointer-events:none; }
-    .camera-empty {
-      position:absolute;
-      inset:0;
-      display:grid;
-      place-items:center;
-      text-align:center;
-      color:#d8e8f5;
-      padding:25px;
-      background:radial-gradient(circle at 50% 40%,#244764,#112433);
-    }
-    .camera-empty .big { font-size:54px; }
-    .camera-empty h3 { margin:8px 0 3px; }
-    .camera-empty p { margin:0; opacity:.8; }
-    .guide {
-      position:absolute;
-      inset:10% 13%;
-      border:2px dashed rgba(255,255,255,.36);
-      border-radius:28px;
-      pointer-events:none;
-    }
-    .status-float {
-      position:absolute;
-      left:14px;
-      right:14px;
-      bottom:14px;
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      padding:11px 14px;
-      border-radius:16px;
-      color:#fff;
-      background:rgba(12,29,45,.74);
-      backdrop-filter:blur(10px);
-    }
-    .status-main { font-weight:600; }
-    .status-sub { font-size:12px; opacity:.78; }
-    .score-orb {
-      --score:0%;
-      width:56px;
-      height:56px;
-      flex:none;
-      border-radius:50%;
-      display:grid;
-      place-items:center;
-      position:relative;
-      font-weight:700;
-      background:conic-gradient(#45d4a0 var(--score),rgba(255,255,255,.15) 0);
-    }
-    .score-orb::before {
-      content:'';
-      position:absolute;
-      inset:5px;
-      border-radius:50%;
-      background:#173047;
-    }
-    .score-orb span { position:relative; }
-    .controls { padding:15px; display:flex; flex-wrap:wrap; gap:9px; }
-    .btn {
-      border:0;
-      border-radius:14px;
-      padding:11px 16px;
-      cursor:pointer;
-      font-weight:600;
-      transition:.18s;
-    }
-    .btn:hover { transform:translateY(-1px); }
-    .btn:disabled { opacity:.45; cursor:not-allowed; transform:none; }
-    .btn-primary {
-      color:#fff;
-      background:linear-gradient(135deg,var(--blue),#4aa8ed);
-      box-shadow:0 9px 22px rgba(51,135,232,.25);
-    }
-    .btn-soft { background:#edf5fb; color:var(--ink); }
-    .btn-danger { background:#fff0f0; color:#b73e3e; }
-    .side { display:flex; flex-direction:column; gap:16px; }
-    .summary,.people,.tips { padding:17px; }
-    .summary h2,.tips h2,.people h2 { font-size:17px; margin:0 0 12px; }
-    .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .metric { padding:13px; border-radius:17px; background:var(--soft); }
-    .metric b { display:block; font-size:22px; }
-    .metric span { font-size:12px; color:var(--muted); }
-    .people-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; }
-    .people-list { display:flex; flex-direction:column; gap:8px; max-height:290px; overflow:auto; }
-    .person {
-      display:grid;
-      grid-template-columns:38px 1fr auto;
-      align-items:center;
-      gap:9px;
-      border:1px solid #e4edf5;
-      border-radius:15px;
-      padding:9px;
-    }
-    .avatar {
-      width:38px;
-      height:38px;
-      border-radius:13px;
-      display:grid;
-      place-items:center;
-      background:linear-gradient(135deg,#ddecff,#ddf8f4);
-    }
-    .person-name { font-weight:600; font-size:14px; }
-    .person-note { font-size:11px; color:var(--muted); }
-    .badge { font-size:11px; padding:5px 8px; border-radius:99px; background:#e5f7ef; color:#157b53; }
-    .badge.risk { background:#fff0e7; color:#a95a16; }
-    .tip { display:flex; gap:10px; align-items:flex-start; margin:10px 0; }
-    .tip-icon { width:34px; height:34px; border-radius:11px; background:#edf6ff; display:grid; place-items:center; flex:none; }
-    .tip b { font-size:13px; }
-    .tip p { font-size:12px; color:var(--muted); margin:2px 0 0; }
-    .modal {
-      position:fixed;
-      inset:0;
-      z-index:30;
-      display:grid;
-      place-items:center;
-      padding:15px;
-      background:rgba(13,31,47,.64);
-      backdrop-filter:blur(7px);
-    }
-    .modal-box {
-      width:min(720px,100%);
-      max-height:94vh;
-      overflow:auto;
-      background:#fff;
-      border-radius:28px;
-      box-shadow:0 30px 90px rgba(7,30,50,.35);
-    }
-    .modal-box.small { width:min(560px,100%); }
-    .modal-hero {
-      padding:26px 26px 18px;
-      background:linear-gradient(135deg,#edf7ff,#eafbf8);
-      border-radius:28px 28px 0 0;
-    }
-    .modal-hero h2 { margin:7px 0 4px; font-size:25px; }
-    .modal-hero p { margin:0; color:var(--muted); }
-    .form { padding:22px 26px 26px; }
-    .grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
-    .field { display:flex; flex-direction:column; gap:6px; }
-    .field.full { grid-column:1/-1; }
-    .field label { font-size:13px; font-weight:600; }
-    .field input,.field select {
-      width:100%;
-      border:1px solid #d7e4ee;
-      border-radius:13px;
-      padding:11px 12px;
-      outline:none;
-      background:#fbfdff;
-    }
-    .field input:focus,.field select:focus {
-      border-color:#5ca2e8;
-      box-shadow:0 0 0 4px rgba(92,162,232,.12);
-    }
-    .hint { font-size:12px; color:var(--muted); }
-    .mode-cards { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
-    .mode { border:1px solid #dce8f1; border-radius:16px; padding:13px; cursor:pointer; }
-    .mode.active { border-color:#4c9be7; background:#f0f7ff; box-shadow:0 0 0 3px rgba(76,155,231,.12); }
-    .mode b { display:block; }
-    .mode span { font-size:12px; color:var(--muted); }
-    .member-row { display:grid; grid-template-columns:1fr 1.5fr auto; gap:8px; margin-top:8px; }
-    .remove { border:0; background:#fff0f0; color:#b44; border-radius:10px; width:38px; cursor:pointer; }
-    .form-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:18px; }
-    .notice {
-      padding:11px 13px;
-      border-radius:13px;
-      background:#fff8e8;
-      color:#875e16;
-      border:1px solid #f3dfac;
-      font-size:12px;
-      line-height:1.6;
-    }
-    .connection-ok { background:#eaf9f2; color:#1b7453; border-color:#c7eadc; }
-    .toast {
-      position:fixed;
-      right:18px;
-      bottom:18px;
-      z-index:60;
-      max-width:360px;
-      padding:12px 16px;
-      border-radius:13px;
-      color:#fff;
-      background:#17324d;
-      box-shadow:var(--shadow);
-    }
-    .loading {
-      position:fixed;
-      inset:0;
-      z-index:70;
-      display:grid;
-      place-items:center;
-      text-align:center;
-      background:rgba(255,255,255,.88);
-    }
-    .spinner {
-      width:48px;
-      height:48px;
-      margin:auto;
-      border:5px solid #dcecf7;
-      border-top-color:#3387e8;
-      border-radius:50%;
-      animation:spin .8s linear infinite;
-    }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:900px) {
-      .layout { grid-template-columns:1fr; }
-      .side { display:grid; grid-template-columns:1fr 1fr; }
-      .tips { grid-column:1/-1; }
-      .camera-wrap { min-height:280px; }
-      .topbar { align-items:flex-start; }
-      .user-pill { display:none; }
-    }
-    @media (max-width:600px) {
-      .shell { padding:10px; }
-      .brand h1 { font-size:18px; }
-      .logo { width:42px; height:42px; }
-      .version { display:none; }
-      .side { display:flex; }
-      .grid,.mode-cards { grid-template-columns:1fr; }
-      .field.full { grid-column:auto; }
-      .member-row { grid-template-columns:1fr 1fr auto; }
-      .modal-hero,.form { padding-left:17px; padding-right:17px; }
-      .camera-wrap { aspect-ratio:3/4; min-height:440px; }
-      .status-float { align-items:flex-end; }
-      .controls .btn { flex:1; }
-      .metric b { font-size:19px; }
-    }
-  </style>
-</head>
-<body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo">🪑</div>
-        <div>
-          <h1>SmartSit AR Coach</h1>
-          <p>ผู้ช่วยดูแลท่านั่งด้วยกล้องและ AI</p>
-        </div>
+<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef7fb"><title>SmartSit AR Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+<style>
+:root{
+  --ink:#17324d;
+  --muted:#718096;
+  --blue:#3387e8;
+  --blue2:#4aa8ed;
+  --cyan:#42c9d7;
+  --soft:#f4f8fc;
+  --soft2:#eaf4ff;
+  --card:#ffffff;
+  --line:#dce8f1;
+  --good:#22a06b;
+  --warn:#f2a93b;
+  --bad:#e45858;
+  --shadow:0 18px 50px rgba(36,83,125,.13);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:'Noto Sans Thai',system-ui,sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(circle at 0 0,#e9f7ff 0,transparent 38%),
+    radial-gradient(circle at 100% 0,#e7fbf6 0,transparent 32%),
+    linear-gradient(135deg,#f8fbff,#eef8f8);
+}
+button,input,select{font:inherit}
+button{-webkit-tap-highlight-color:transparent}
+.hidden{display:none!important}
+.app{max-width:1500px;margin:auto;padding:18px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:16px}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:50px;height:50px;border-radius:17px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:grid;place-items:center;font-size:25px;color:#fff;box-shadow:0 10px 25px rgba(51,135,232,.28)}
+.brand h1{font-size:21px;margin:0}
+.brand p{margin:2px 0;color:var(--muted);font-size:13px}
+.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.nav-btn{border:1px solid var(--line);background:#fff;color:#3f5b75;border-radius:12px;padding:9px 13px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(30,70,110,.06)}
+.nav-btn:hover{border-color:#a9d0ef;background:#f6fbff}
+.pill,.version-pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:12px;box-shadow:0 6px 22px rgba(30,70,110,.07)}
+.version-pill{background:#eaf4ff;color:#2b73b8;border-color:#cfe4f7;font-weight:700}
+.screen{display:none}.screen.active{display:block}
+.card{background:rgba(255,255,255,.96);border:1px solid rgba(207,226,240,.9);border-radius:24px;box-shadow:var(--shadow)}
+.form-card{max-width:980px;margin:22px auto;padding:26px}
+.intro{text-align:center}.intro h2{font-size:29px;margin:0 0 7px}.intro p{color:var(--muted);margin:0}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0}
+.mode-card{border:2px solid var(--line);border-radius:19px;padding:18px;cursor:pointer;position:relative;background:#fff;transition:.18s}
+.mode-card:hover{transform:translateY(-1px);border-color:#b9d9f1}
+.mode-card.active{border-color:var(--blue);background:linear-gradient(145deg,#f4f9ff,#f0fbfb);box-shadow:0 0 0 4px rgba(51,135,232,.10)}
+.mode-card input{position:absolute;opacity:0}.mode-card .emoji{font-size:35px}.mode-card h3{margin:8px 0 4px}.mode-card p{margin:0;color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.full{grid-column:1/-1}
+.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
+.field input,.field select{width:100%;padding:12px 14px;border:1px solid #d3e3ef;border-radius:13px;background:#fff;color:var(--ink);outline:none;transition:.15s}
+.field input:focus,.field select:focus{border-color:#72b5ec;box-shadow:0 0 0 4px rgba(51,135,232,.10)}
+.consent{display:flex;gap:10px;background:#f1f8fd;border:1px solid #e0edf6;border-radius:14px;padding:12px;color:#52687d;font-size:13px;line-height:1.55}
+.btn{border:0;border-radius:14px;padding:11px 17px;font-weight:700;cursor:pointer;transition:.18s}
+.btn:hover{transform:translateY(-1px)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:white;box-shadow:0 9px 22px rgba(51,135,232,.25)}
+.btn-light{background:#edf5fb;color:var(--ink)}
+.btn-danger{background:#fff0f0;color:#b73e3e}
+.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.monitor-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(310px,.8fr);gap:16px}
+.camera-card{overflow:hidden;background:#fff}
+.camera-head{padding:14px 17px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e9f1f6}
+.live{display:flex;gap:8px;align-items:center;font-weight:700;color:var(--ink)}
+.live i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 5px rgba(228,88,88,.13);animation:pulse 1.5s infinite}
+@keyframes pulse{50%{opacity:.45}}
+.camera-wrap{position:relative;overflow:hidden;background:#132333;aspect-ratio:16/9;min-height:430px}
+.camera-wrap video,.camera-wrap canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.mirror{transform:scaleX(-1)}
+.camera-guide{position:absolute;inset:9% 12%;border:2px dashed rgba(255,255,255,.34);border-radius:28px;pointer-events:none}
+.status-float{position:absolute;left:14px;right:14px;bottom:68px;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:16px;color:#fff;background:rgba(12,29,45,.76);backdrop-filter:blur(10px)}
+.status-head{display:flex;align-items:center;gap:10px}.status-icon{font-size:31px}.status-title{font-size:17px;font-weight:800}.status-desc{font-size:12px;opacity:.78;color:#fff}
+.score-orb{width:58px;height:58px;flex:none;border-radius:50%;display:grid;place-items:center;position:relative;font-weight:800;font-size:18px;background:conic-gradient(#45d4a0 0deg,rgba(255,255,255,.15) 0)}
+.score-orb:before{content:"";position:absolute;inset:5px;border-radius:50%;background:#173047}.score-orb b{position:relative}
+.camera-message{position:absolute;left:14px;right:14px;bottom:14px;color:#dceaf5;font-size:13px;text-align:left;padding:11px 14px;border-radius:14px;background:rgba(12,29,45,.70);backdrop-filter:blur(8px)}
+.controls{padding:15px;display:flex;flex-wrap:wrap;gap:9px}.controls .actions{margin:0;justify-content:flex-start}
+.side{display:flex;flex-direction:column;gap:16px}.status-card,.control-card,.tips-card{padding:17px}.status-card h2,.control-card h3,.tips-card h3{font-size:17px;margin:0 0 12px}
+.meter{height:10px;background:#e8f0f6;border-radius:999px;overflow:hidden;margin:13px 0}.meter div{height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));width:0}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{padding:13px;border-radius:17px;background:var(--soft)}.metric b{display:block;font-size:22px}.metric span{font-size:12px;color:var(--muted)}
+.issue-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}.issue{display:flex;justify-content:space-between;gap:10px;background:#f6f9fc;border:1px solid #e8f0f6;border-radius:12px;padding:10px;font-size:13px}
+.note{font-size:12px;color:var(--muted);line-height:1.6}.tip{display:flex;gap:10px;margin-top:11px}.tip-icon{width:35px;height:35px;border-radius:12px;background:#eef6fc;display:grid;place-items:center;flex:none}.tip b{font-size:13px}.tip p{margin:2px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
+.summary-card{max-width:1000px;margin:20px auto;padding:24px}.summary-header{text-align:center}.score-circle{width:132px;height:132px;border-radius:50%;margin:16px auto;display:grid;place-items:center;background:conic-gradient(var(--blue) 0deg,#e7eef4 0);position:relative}.score-circle:before{content:"";position:absolute;width:102px;height:102px;background:#fff;border-radius:50%}.score-number{position:relative;font-size:34px;font-weight:900}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}.summary-box{text-align:center;background:var(--soft);border-radius:16px;padding:14px}.summary-box b{display:block;font-size:23px}.summary-box span{font-size:12px;color:var(--muted)}
+.summary-detail{margin-top:15px;padding:14px;background:#f7fafc;border-radius:15px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.summary-detail div{font-size:13px}.summary-detail b{display:block;font-size:16px;margin-bottom:3px}.chart-wrap{height:250px;margin-top:20px}.history-row{display:grid;grid-template-columns:1.2fr .6fr .7fr 1fr;gap:8px;padding:10px;border-bottom:1px solid var(--line);font-size:13px}
+.toast{position:fixed;right:18px;bottom:18px;background:#173047;color:#fff;border-radius:14px;padding:13px 16px;display:none;z-index:99;box-shadow:0 12px 35px rgba(15,50,80,.25)}
+.loading{position:fixed;inset:0;background:rgba(248,252,255,.91);display:none;place-items:center;z-index:100;text-align:center;backdrop-filter:blur(3px)}.spinner{width:45px;height:45px;border:5px solid #dceaf5;border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite;margin:auto auto 10px}@keyframes spin{to{transform:rotate(360deg)}}
+.report-shell{display:flex;flex-direction:column;gap:15px}.report-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.report-head h2{margin:0}.report-head p{margin:4px 0 0;color:var(--muted)}
+.report-filter{padding:18px}.report-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:11px}.report-filter .field input,.report-filter .field select{padding:10px 12px}
+.report-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:11px}.report-kpi{padding:16px}.report-kpi b{display:block;font-size:25px;margin-bottom:4px}.report-kpi span{font-size:12px;color:var(--muted)}
+.report-charts{display:grid;grid-template-columns:1.6fr 1fr;gap:15px}.report-chart-card{padding:18px}.report-chart-card h3{margin:0 0 4px}.report-chart-card p{margin:0 0 12px;color:var(--muted);font-size:12px}.report-chart-box{height:280px}
+.report-table-card{padding:0;overflow:hidden}.report-table-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:17px 18px;border-bottom:1px solid var(--line)}.report-table-head h3{margin:0}.table-scroll{overflow:auto}.report-table{width:100%;border-collapse:collapse;min-width:980px}.report-table th,.report-table td{padding:12px 11px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;vertical-align:top}.report-table th{background:#eef6fc;color:#3e5b75;position:sticky;top:0;z-index:1}.report-table tr:hover td{background:#fbfdff}
+.mode-badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;font-weight:800;font-size:11px}.mode-personal{background:#dbeafe;color:#1d4ed8}.mode-classroom{background:#cffafe;color:#0e7490}.score-badge{display:inline-block;min-width:42px;text-align:center;border-radius:9px;padding:5px 7px;font-weight:900}.score-high{background:#dcfce7;color:#166534}.score-mid{background:#fef3c7;color:#92400e}.score-low{background:#fee2e2;color:#991b1b}.empty-report{text-align:center;color:var(--muted);padding:35px}.report-note{padding:12px 15px;background:#f2f8fc;border-radius:13px;color:var(--muted);font-size:12px}
+@media(max-width:1050px){.report-filter-grid{grid-template-columns:repeat(3,1fr)}.report-kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.monitor-layout{grid-template-columns:1fr}.camera-wrap{min-height:52vh}.side{display:grid;grid-template-columns:1fr 1fr}.tips-card{grid-column:1/-1}}
+@media(max-width:700px){.app{padding:10px}.topbar{align-items:flex-start}.brand h1{font-size:18px}.top-actions{justify-content:flex-end}.version-pill,.pill{display:none}.mode-grid,.grid,.side{grid-template-columns:1fr}.form-card{padding:18px;margin:8px auto}.camera-wrap{min-height:55vh;aspect-ratio:auto}.summary-grid{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:1fr 1fr}.actions .btn{flex:1}.report-head{flex-direction:column}.report-filter-grid,.report-charts{grid-template-columns:1fr}.report-kpis{grid-template-columns:1fr 1fr}.summary-detail{grid-template-columns:1fr}.report-chart-box{height:240px}.status-float{bottom:76px}}
+@media print{body{background:#fff}.topbar,.report-filter,.report-head .actions,.toast,.loading{display:none!important}.app{max-width:none;padding:0}.report-shell{gap:10px}.card{box-shadow:none}.report-table-card{overflow:visible}.table-scroll{overflow:visible}.report-table{min-width:0}.report-table th,.report-table td{font-size:9px;padding:6px}.report-chart-box{height:230px}.screen{display:none!important}#reportScreen{display:block!important}}
+
+</style></head><body>
+<div class="loading" id="loading"><div><div class="spinner"></div><b id="loadingText">กำลังเตรียมระบบ AI...</b></div></div><div class="toast" id="toast"></div>
+<div class="app"><header class="topbar"><div class="brand"><div class="logo">🧍</div><div><h1>SmartSit AR Coach</h1><p>ตรวจท่านั่งส่วนบุคคลและห้องเรียนด้วย AI</p></div></div><div class="top-actions"><button class="nav-btn" id="homeNavBtn" type="button">📷 เริ่มตรวจ</button><button class="nav-btn" id="reportNavBtn" type="button">📊 รายงานผล</button><div class="version-pill">Blue Complete</div><div class="pill" id="headerUser">ยังไม่ได้เริ่มตรวจ</div></div></header>
+<section id="setupScreen" class="screen active"><div class="card form-card"><div class="intro"><h2>เลือกโหมดการตรวจ</h2><p>ใช้ได้ทั้งสำหรับตนเองและการทดลองกับนักเรียนหลายคน</p></div>
+<form id="userForm" onsubmit="return false;"><div class="mode-grid">
+<label class="mode-card active" data-mode="personal"><input type="radio" name="appMode" value="personal" checked><div class="emoji">🙋</div><h3>ตรวจส่วนบุคคล</h3><p>ตั้งค่าท่านั่งเฉพาะคน ตรวจละเอียด และสรุปประวัติรายบุคคล</p></label>
+<label class="mode-card" data-mode="classroom"><input type="radio" name="appMode" value="classroom"><div class="emoji">🏫</div><h3>ตรวจแบบห้องเรียน</h3><p>กล้องเดียวตรวจหลายคน แสดงจำนวนท่าดีและควรปรับแบบเรียลไทม์</p></label></div>
+<div class="grid">
+<div class="field"><label id="nameLabel">ชื่อหรือชื่อเล่น *</label><input id="name" required maxlength="80" placeholder="เช่น น้องมิน"></div>
+<div class="field"><label id="idLabel">รหัสผู้ใช้งาน *</label><input id="userId" required maxlength="40" placeholder="เช่น USER001"><div class="note">ใช้รหัสเดิมทุกครั้ง ระบบจะรวมประวัติและแนวโน้มของคนเดิมให้โดยอัตโนมัติ</div></div>
+<div class="field personal-field"><label>อายุ</label><input id="age" type="number" min="6" max="100" placeholder="12"></div>
+<div class="field personal-field"><label>กลุ่มผู้ใช้</label><select id="role"><option>นักเรียน</option><option>นักศึกษา</option><option>บุคลากรสำนักงาน</option><option>ผู้ทำงานที่บ้าน</option><option>เกมเมอร์</option><option>บุคคลทั่วไป</option></select></div>
+<div class="field"><label>กิจกรรม</label><select id="activityMode"><option>นั่งเรียน</option><option>อ่านหนังสือ</option><option>ทำงานหน้าคอมพิวเตอร์</option><option>ประชุมออนไลน์</option><option>เล่นเกม</option><option>ใช้งานทั่วไป</option></select></div>
+<div class="field"><label>กล้อง</label><select id="cameraFacing"><option value="user">กล้องหน้า</option><option value="environment">กล้องหลัง</option></select></div>
+<div class="field classroom-field hidden"><label>โรงเรียน/สถานที่ *</label><input id="organization" maxlength="100" placeholder="เช่น โรงเรียนตัวอย่าง"></div>
+<div class="field classroom-field hidden"><label>ชั้น/ห้อง *</label><input id="className" maxlength="60" placeholder="เช่น ป.6/1"></div>
+<div class="field classroom-field hidden"><label>จำนวนนักเรียนที่คาดว่าจะอยู่ในภาพ</label><input id="expectedPeople" type="number" min="1" max="40" value="4"></div>
+<div class="full consent"><input id="consent" type="checkbox" required><span>ยินยอมให้ใช้กล้องเพื่อวิเคราะห์ท่าทางแบบเรียลไทม์ โดยไม่บันทึกภาพหรือวิดีโอ และการทดลองกับนักเรียนควรได้รับความยินยอมจากโรงเรียน/ผู้ปกครองตามความเหมาะสม</span></div>
+</div><div class="actions"><button class="btn btn-light" id="setupReportBtn" type="button">ดูรายงานผลย้อนหลัง</button><button class="btn btn-primary" id="startBtn" type="button">เปิดกล้องและเริ่มตรวจ</button></div></form></div></section>
+
+<section id="monitorScreen" class="screen">
+  <div class="monitor-layout">
+    <div class="card camera-card">
+      <div class="camera-head">
+        <div class="live"><i></i><span id="liveLabel">LIVE PERSONAL AI</span></div>
+        <small>AR ประมวลผลบนอุปกรณ์ · ไม่บันทึกภาพ</small>
       </div>
-      <div class="header-actions">
-        <span class="version">พร้อมใช้ v1.2</span>
-        <div id="userPill" class="user-pill">ยังไม่ได้ลงทะเบียน</div>
-        
+      <div class="camera-wrap">
+        <video id="video" playsinline muted></video>
+        <canvas id="canvas"></canvas>
+        <div class="camera-guide"></div>
+        <div class="status-float">
+          <div class="status-head">
+            <div class="status-icon" id="statusIcon">⏳</div>
+            <div><div class="status-title" id="statusTitle">กำลังเตรียม</div><div class="status-desc" id="statusDesc">กรุณารอสักครู่</div></div>
+          </div>
+          <div class="score-orb"><b id="liveScore">0</b></div>
+        </div>
+        <div class="camera-message" id="cameraMessage">จัดตำแหน่งกล้องให้เห็นร่างกายชัดเจน</div>
       </div>
-    </header>
-
-    <main class="layout">
-      <section class="card camera-card">
-        <div class="camera-head">
-          <div class="live"><i class="dot"></i><span id="cameraLabel">กล้องยังไม่เปิด</span></div>
-          <small id="modelLabel">AI จะโหลดเมื่อเปิดกล้อง</small>
-        </div>
-
-        <div class="camera-wrap" id="cameraWrap">
-          <video id="video" playsinline muted></video>
-          <canvas id="canvas"></canvas>
-
-          <div id="cameraEmpty" class="camera-empty">
-            <div>
-              <div class="big">📷</div>
-              <h3>พร้อมเริ่มตรวจท่านั่ง</h3>
-              <p>ลงทะเบียนแล้วกด “เปิดกล้อง AR”</p>
-            </div>
-          </div>
-
-          <div class="guide"></div>
-
-          <div class="status-float">
-            <div>
-              <div id="statusMain" class="status-main">รอเริ่มใช้งาน</div>
-              <div id="statusSub" class="status-sub">ระบบจะวาดโครงร่าง AR บนภาพกล้อง</div>
-            </div>
-            <div id="scoreOrb" class="score-orb"><span id="scoreText">0</span></div>
-          </div>
-        </div>
-
-        <div class="controls">
-          <button id="startBtn" class="btn btn-primary" type="button">เปิดกล้อง AR</button>
-          <button id="pauseBtn" class="btn btn-soft" type="button" disabled>พัก</button>
-          <button id="switchBtn" class="btn btn-soft" type="button" disabled>สลับกล้อง</button>
-          <button id="finishBtn" class="btn btn-danger" type="button" disabled>จบและบันทึก</button>
-        </div>
-      </section>
-
-      <aside class="side">
-        <section class="card summary">
-          <h2>สรุปการใช้งาน</h2>
-          <div class="metric-grid">
-            <div class="metric"><b id="timer">00:00</b><span>เวลาใช้งาน</span></div>
-            <div class="metric"><b id="avgScore">0</b><span>คะแนนเฉลี่ย</span></div>
-            <div class="metric"><b id="goodTime">00:00</b><span>ท่าถูกต้อง</span></div>
-            <div class="metric"><b id="riskTime">00:00</b><span>ท่าที่ควรปรับ</span></div>
-          </div>
-        </section>
-
-        <section class="card people">
-          <div class="people-head">
-            <h2>ผู้ที่ตรวจพบ</h2>
-            <small id="peopleCount">0 คน</small>
-          </div>
-          <div id="peopleList" class="people-list">
-            <div style="color:#718096;font-size:13px;text-align:center;padding:20px">ยังไม่พบผู้ใช้งาน</div>
-          </div>
-        </section>
-
-        <section class="card tips">
-          <h2>ท่านั่งที่แนะนำ</h2>
-          <div class="tip"><div class="tip-icon">👀</div><div><b>ระดับสายตา</b><p>ขอบบนจอใกล้ระดับสายตา ไม่ก้มคอต่อเนื่อง</p></div></div>
-          <div class="tip"><div class="tip-icon">🧍</div><div><b>หลังและไหล่</b><p>พิงพนัก ไหล่ผ่อนคลายและอยู่ใกล้ระดับเดียวกัน</p></div></div>
-          <div class="tip"><div class="tip-icon">📏</div><div><b>ระยะจากกล้อง</b><p>ให้เห็นศีรษะ ไหล่ และช่วงลำตัวชัดเจน</p></div></div>
-        </section>
-      </aside>
-    </main>
-  </div>
-
-  <div id="connectionModal" class="modal hidden">
-    <div class="modal-box small">
-      <div class="modal-hero">
-        <div style="font-size:34px">🔗</div>
-        <h2>การเชื่อมต่อข้อมูล</h2>
-        <p>ผู้ดูแลระบบกำหนดการเชื่อมต่อไว้แล้ว</p>
-      </div>
-      <div class="form">
-        <div class="field">
-          <label>ลิงก์ Web app ของ Apps Script</label>
-          <input id="endpointInput" inputmode="url" placeholder="https://script.google.com/.../exec">
-          <div class="hint">ลิงก์จะถูกจำไว้ในเบราว์เซอร์เครื่องนี้ ไม่ต้องแก้โค้ด</div>
-        </div>
-        <div id="endpointNotice" class="notice" style="margin-top:12px">ยังไม่ได้การเชื่อมต่อข้อมูล</div>
-        <div class="form-actions">
-          <button id="closeSettingsBtn" class="btn btn-soft" type="button">ปิด</button>
-          <button id="saveEndpointBtn" class="btn btn-primary" type="button">บันทึกลิงก์</button>
+      <div class="controls">
+        <div class="actions">
+          <button class="btn btn-primary" id="calibrateBtn" type="button">บันทึกท่ามาตรฐาน</button>
+          <button class="btn btn-light" id="switchCameraBtn" type="button">สลับกล้อง</button>
+          <button class="btn btn-danger" id="stopBtn" type="button">สิ้นสุดและบันทึก</button>
         </div>
       </div>
     </div>
+    <aside class="side">
+      <div class="card status-card">
+        <h2>สรุปการใช้งาน</h2>
+        <div class="metrics">
+          <div class="metric"><b id="sessionTime">00:00</b><span>เวลาที่ตรวจ</span></div>
+          <div class="metric"><b id="metricA">0</b><span id="metricALabel">เวลาท่าดี</span></div>
+          <div class="metric"><b id="metricB">0</b><span id="metricBLabel">แจ้งเตือน</span></div>
+          <div class="metric"><b id="currentModeText">เดี่ยว</b><span>รูปแบบการตรวจ</span></div>
+        </div>
+        <div class="meter"><div id="scoreBar"></div></div>
+      </div>
+      <div class="card control-card">
+        <h3>สิ่งที่ระบบตรวจพบ</h3>
+        <div class="issue-list">
+          <div class="issue"><span id="issue1Label">คอยื่น/ก้มหน้า</span><b id="issue1">–</b></div>
+          <div class="issue"><span id="issue2Label">ลำตัวค่อม</span><b id="issue2">–</b></div>
+          <div class="issue"><span id="issue3Label">ไหล่เอียง</span><b id="issue3">–</b></div>
+        </div>
+        <h3 id="controlTitle" style="margin-top:16px">ตั้งค่าท่ามาตรฐาน</h3>
+        <p class="note" id="controlText">นั่งในท่าที่ถูกต้อง แล้วกดบันทึกท่ามาตรฐาน</p>
+      </div>
+      <div class="card tips-card">
+        <h3>ท่านั่งที่แนะนำ</h3>
+        <div class="tip"><div class="tip-icon">👀</div><div><b>ระดับสายตา</b><p>ขอบบนจอใกล้ระดับสายตา ไม่ก้มคอต่อเนื่อง</p></div></div>
+        <div class="tip"><div class="tip-icon">🧍</div><div><b>หลังและไหล่</b><p>พิงพนัก ไหล่ผ่อนคลาย และอยู่ใกล้ระดับเดียวกัน</p></div></div>
+        <div class="tip"><div class="tip-icon">📏</div><div><b>ระยะจากกล้อง</b><p>ให้เห็นศีรษะ ไหล่ และสะโพกชัดเจน</p></div></div>
+        <p class="note" id="privacyNote" style="margin:12px 0 0">ภาพจากกล้องประมวลผลในอุปกรณ์และไม่ถูกบันทึก รุ่นห้องเรียนใช้หมายเลขชั่วคราว P1, P2 โดยไม่ระบุตัวบุคคล</p>
+      </div>
+    </aside>
   </div>
+</section>
 
-  <div id="registerModal" class="modal hidden">
-    <div class="modal-box">
-      <div class="modal-hero">
-        <div style="font-size:34px">✨</div>
-        <h2>ลงทะเบียนเข้าใช้ SmartSit</h2>
-        <p>ข้อมูลใช้ระบุผู้ใช้งานและบันทึกผลลง Google Sheets</p>
+<section id="summaryScreen" class="screen"><div class="card summary-card"><div class="summary-header"><h2 id="summaryTitle">สรุปผลการตรวจ</h2><p id="summaryName"></p><div class="score-circle" id="scoreCircle"><div class="score-number" id="finalScore">0</div></div><h3 id="finalMessage"></h3></div><div class="summary-grid"><div class="summary-box"><b id="sumTotal">0 นาที</b><span>เวลาทั้งหมด</span></div><div class="summary-box"><b id="sumGood">0 นาที</b><span id="sumGoodLabel">ท่าดี</span></div><div class="summary-box"><b id="sumBad">0 นาที</b><span id="sumBadLabel">ควรปรับ</span></div><div class="summary-box"><b id="sumAlerts">0</b><span id="sumAlertLabel">แจ้งเตือน</span></div></div><div class="summary-detail"><div><b id="summaryMainIssue">–</b><span>สิ่งที่พบเด่น</span></div><div><b id="summaryStarted">–</b><span>เริ่มตรวจ</span></div><div><b id="summaryEnded">–</b><span>สิ้นสุดการตรวจ</span></div></div><div class="chart-wrap"><canvas id="historyChart"></canvas></div><div id="history"></div><div class="actions"><button class="btn btn-light" id="backBtn">กลับหน้าหลัก</button><button class="btn btn-light" id="summaryReportBtn">ดูหน้ารายงานทั้งหมด</button><button class="btn btn-primary" id="restartBtn">เริ่มตรวจอีกครั้ง</button></div></div></section>
+
+<section id="reportScreen" class="screen">
+  <div class="report-shell">
+    <div class="report-head">
+      <div><h2>รายงานผลการตรวจจับ</h2><p>ดูผลย้อนหลังทั้งโหมดส่วนบุคคลและโหมดห้องเรียนจากข้อมูลที่บันทึกใน Google Sheets</p></div>
+      <div class="actions"><button class="btn btn-light" id="printReportBtn" type="button">พิมพ์รายงาน</button><button class="btn btn-primary" id="exportReportBtn" type="button">ส่งออก CSV</button></div>
+    </div>
+
+    <div class="card report-filter">
+      <div class="report-filter-grid">
+        <div class="field"><label>รหัสผู้ใช้งาน/รหัสครู *</label><input id="reportUserId" maxlength="40" placeholder="กรอกรหัสเดียวกับตอนตรวจ"></div>
+        <div class="field"><label>โหมด</label><select id="reportMode"><option value="all">ทั้งหมด</option><option value="personal">ส่วนบุคคล</option><option value="classroom">ห้องเรียน</option></select></div>
+        <div class="field"><label>โรงเรียน/สถานที่</label><input id="reportOrganization" maxlength="100" placeholder="ใช้กรองโหมดห้องเรียน"></div>
+        <div class="field"><label>ชั้น/ห้อง</label><input id="reportClassName" maxlength="60" placeholder="เช่น ป.6/1"></div>
+        <div class="field"><label>ตั้งแต่วันที่</label><input id="reportDateFrom" type="date"></div>
+        <div class="field"><label>ถึงวันที่</label><input id="reportDateTo" type="date"></div>
       </div>
+      <div class="actions"><button class="btn btn-light" id="resetReportBtn" type="button">ล้างตัวกรอง</button><button class="btn btn-primary" id="loadReportBtn" type="button">แสดงรายงาน</button></div>
+      <div class="report-note">ระบบแสดงรายงานเฉพาะรหัสที่ระบุ เพื่อไม่เปิดข้อมูลทั้งหมดแก่ผู้ใช้งานทั่วไป และไม่มีภาพหรือวิดีโอในรายงาน</div>
+    </div>
 
-      <div class="form">
-        <div class="grid">
-          <div class="field">
-            <label>รหัสนักศึกษา/รหัสผู้ใช้ *</label>
-            <input id="userId" autocomplete="off" placeholder="เช่น 6612345678">
-          </div>
-          <div class="field">
-            <label>ชื่อ–นามสกุล *</label>
-            <input id="fullName" autocomplete="name" placeholder="กรอกชื่อผู้ใช้งาน">
-          </div>
-          <div class="field full">
-            <label>ชั้นปี/หน่วยงาน</label>
-            <input id="department" autocomplete="organization" placeholder="เช่น นักศึกษาแพทย์ ชั้นปีที่ 2">
-          </div>
+    <div class="report-kpis">
+      <div class="card report-kpi"><b id="reportSessions">0</b><span>ครั้งที่ตรวจ</span></div>
+      <div class="card report-kpi"><b id="reportAvgScore">0</b><span>คะแนนเฉลี่ย</span></div>
+      <div class="card report-kpi"><b id="reportTotalTime">0 นาที</b><span>เวลาตรวจรวม</span></div>
+      <div class="card report-kpi"><b id="reportGoodRate">0%</b><span id="reportGoodLabel">อัตราท่าดี</span></div>
+      <div class="card report-kpi"><b id="reportAttention">0</b><span>แจ้งเตือน/พบควรปรับ</span></div>
+      <div class="card report-kpi"><b id="reportLatest">–</b><span>ตรวจล่าสุด</span></div>
+    </div>
 
-          <div class="field full">
-            <label>รูปแบบการใช้งาน</label>
-            <div class="mode-cards">
-              <div class="mode active" data-mode="single">
-                <b>👤 โหมดเดี่ยว</b>
-                <span>ตรวจผู้ใช้งาน 1 คน</span>
-              </div>
-              <div class="mode" data-mode="group">
-                <b>👥 โหมดกลุ่ม</b>
-                <span>ตรวจพร้อมกัน 2–4 คน</span>
-              </div>
-            </div>
-          </div>
+    <div class="report-charts">
+      <div class="card report-chart-card"><h3>แนวโน้มคะแนน</h3><p>แสดงคะแนนแต่ละครั้งตามลำดับเวลา</p><div class="report-chart-box"><canvas id="reportScoreChart"></canvas></div></div>
+      <div class="card report-chart-card"><h3 id="reportStatusTitle">สัดส่วนผลการตรวจ</h3><p id="reportStatusDesc">เปรียบเทียบท่าดีและท่าที่ควรปรับ</p><div class="report-chart-box"><canvas id="reportStatusChart"></canvas></div></div>
+    </div>
 
-          <div id="groupFields" class="field full hidden">
-            <label>ชื่อกลุ่ม *</label>
-            <input id="groupName" autocomplete="off" placeholder="เช่น กลุ่ม A">
-
-            <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:10px">
-              <label>สมาชิกเรียงจากซ้ายไปขวาหน้ากล้อง</label>
-              <button id="addMemberBtn" class="btn btn-soft" type="button" style="padding:7px 10px">+ เพิ่มสมาชิก</button>
-            </div>
-            <div id="members"></div>
-            <small class="hint">ระบบจับคู่ชื่อกับคนในภาพตามตำแหน่งซ้าย → ขวา</small>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button id="registerBtn" class="btn btn-primary" type="button">ลงทะเบียนและเข้าสู่ระบบ</button>
-        </div>
-      </div>
+    <div class="card report-table-card">
+      <div class="report-table-head"><div><h3>รายละเอียดการตรวจจับ</h3><span class="note" id="reportResultCount">ยังไม่ได้โหลดข้อมูล</span></div></div>
+      <div class="table-scroll"><table class="report-table"><thead><tr><th>วันที่–เวลา</th><th>โหมด</th><th>ผู้ใช้/สถานที่</th><th>กิจกรรม/ชั้น</th><th>ระยะเวลา</th><th>คะแนน</th><th>ผลท่าดี</th><th>ผลควรปรับ</th><th>แจ้งเตือน</th><th>รายละเอียด</th></tr></thead><tbody id="reportTableBody"><tr><td colspan="10" class="empty-report">กรอกรหัสแล้วกด “แสดงรายงาน”</td></tr></tbody></table></div>
     </div>
   </div>
+</section>
 
-  <div id="loading" class="loading hidden">
-    <div>
-      <div class="spinner"></div>
-      <p id="loadingText">กำลังดำเนินการ…</p>
-    </div>
-  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const MAX_CLASSROOM_POSES = 6;
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQAnQVENtlVWX7-XjuS7WzTPnzyjeLWnz--uk4jb4_IDOrlm4ivVwoypOW3piuQZ7bvA/exec';
+let jsonpSequence = 0;
 
-  <div id="toast" class="toast hidden"></div>
-  <iframe id="gasSink" name="gasSink" class="hidden" title="Google Sheets receiver"></iframe>
+let detector = null;
+let stream = null;
+let animationId = null;
+let inferenceBusy = false;
+let lastInferenceAt = 0;
+let chart = null;
+let reportScoreChart = null;
+let reportStatusChart = null;
+let reportRows = [];
+let appMode = 'personal';
+let facingMode = 'user';
+let user = {};
+let baseline = null;
+let latestPersonalMetrics = null;
+let startedAt = null;
+let lastTick = 0;
+let badSince = null;
+let lastAlertAt = 0;
+let consecutiveAiErrors = 0;
 
-  <script type="module">
-    const $ = (selector) => document.querySelector(selector);
-    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+let config = {
+  forwardHeadThreshold: 0.12,
+  slouchThreshold: 0.12,
+  shoulderTiltThreshold: 0.08,
+  alertDelaySeconds: 8,
+  minVisibility: 0.35,
+  classroomBadRatioAlert: 0.35,
+  maxClassroomPoses: MAX_CLASSROOM_POSES
+};
 
-    const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwQAnQVENtlVWX7-XjuS7WzTPnzyjeLWnz--uk4jb4_IDOrlm4ivVwoypOW3piuQZ7bvA/exec';
-    const MAX_GROUP_SIZE = 4;
-    const ALERT_SECONDS = 5;
-    const SAVE_RISK_EVERY_SECONDS = 10;
+let stats = resetStats();
 
-    let endpoint = '';
-    let registration = null;
-    let sessionId = '';
-    let poseLandmarker = null;
-    let mediaStream = null;
-    let running = false;
-    let paused = false;
-    let facingMode = 'user';
-    let animationId = null;
-    let lastVideoTime = -1;
-    let startedAt = 0;
-    let lastTick = 0;
-    let lastMetricsPaint = 0;
-    let scoreSamples = [];
-    let personStats = {};
-    let riskState = {};
-    let totalGood = 0;
-    let totalRisk = 0;
+const CONNECTIONS = [
+  ['nose', 'left_eye'], ['nose', 'right_eye'],
+  ['left_eye', 'left_ear'], ['right_eye', 'right_ear'],
+  ['left_shoulder', 'right_shoulder'],
+  ['left_shoulder', 'left_elbow'], ['left_elbow', 'left_wrist'],
+  ['right_shoulder', 'right_elbow'], ['right_elbow', 'right_wrist'],
+  ['left_shoulder', 'left_hip'], ['right_shoulder', 'right_hip'],
+  ['left_hip', 'right_hip'],
+  ['left_hip', 'left_knee'], ['right_hip', 'right_knee']
+];
 
-    const video = $('#video');
-    const canvas = $('#canvas');
-    const ctx = canvas.getContext('2d');
+function resetStats() {
+  return {
+    totalSeconds: 0,
+    goodSeconds: 0,
+    badSeconds: 0,
+    unknownSeconds: 0,
+    alertCount: 0,
+    noPoseCount: 0,
+    issueFrames: { forward: 0, slouch: 0, shoulder: 0 },
+    detectedSum: 0,
+    detectedFrames: 0,
+    maxDetected: 0,
+    personObservations: 0,
+    goodPersonObservations: 0,
+    badPersonObservations: 0
+  };
+}
 
-    const CONNECTIONS = [
-      [0,7],[0,8],[7,11],[8,12],[11,12],[11,13],[13,15],[12,14],[14,16],
-      [11,23],[12,24],[23,24],[23,25],[24,26]
-    ];
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
 
-    init();
+function loading(show, text = 'กำลังเตรียมระบบ AI...') {
+  $('loadingText').textContent = text;
+  $('loading').style.display = show ? 'grid' : 'none';
+}
 
-    function init() {
-      // ผู้ดูแลระบบกำหนดปลายทาง Google Sheets ไว้ในไฟล์แล้ว
-      // ผู้ใช้งานทั่วไปไม่ต้องกรอกลิงก์หรือเห็นหน้าตั้งค่านี้
-      endpoint = normalizeEndpoint(APPS_SCRIPT_ENDPOINT);
-      bindEvents();
-      setMode('single');
-      updateConnectionNotice();
-      $('#connectionModal').classList.add('hidden');
-      $('#registerModal').classList.remove('hidden');
+function toast(message, duration = 4500) {
+  const element = $('toast');
+  element.textContent = message;
+  element.style.display = 'block';
+  clearTimeout(element._timer);
+  element._timer = setTimeout(() => {
+    element.style.display = 'none';
+  }, duration);
+}
+
+function serverCall(name, ...args) {
+  return new Promise((resolve, reject) => {
+    if (!APPS_SCRIPT_URL || !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/i.test(APPS_SCRIPT_URL)) {
+      reject(new Error('ยังไม่ได้ตั้งค่าลิงก์ Apps Script ในไฟล์ index.html'));
+      return;
     }
 
-    function bindEvents() {
-      $$('.mode').forEach((card) => {
-        card.addEventListener('click', () => setMode(card.dataset.mode));
-      });
+    const callbackName = `__smartsit_jsonp_${Date.now()}_${jsonpSequence++}`;
+    const script = document.createElement('script');
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error('เชื่อมต่อ Google Sheets ไม่สำเร็จหรือใช้เวลานานเกินไป'));
+    }, 20000);
 
-      $('#saveEndpointBtn').addEventListener('click', saveEndpoint);
-      $('#closeSettingsBtn').addEventListener('click', closeConnectionModal);
-      $('#addMemberBtn').addEventListener('click', addMember);
-      $('#registerBtn').addEventListener('click', registerUser);
-      $('#startBtn').addEventListener('click', startCamera);
-      $('#pauseBtn').addEventListener('click', togglePause);
-      $('#switchBtn').addEventListener('click', switchCamera);
-      $('#finishBtn').addEventListener('click', finishSession);
-
-      window.addEventListener('beforeunload', stopTracks);
+    function cleanup() {
+      window.clearTimeout(timeout);
+      try { delete window[callbackName]; } catch (error) { window[callbackName] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
     }
 
-    function openConnectionModal(allowClose) {
-      $('#endpointInput').value = endpoint;
-      $('#closeSettingsBtn').classList.toggle('hidden', !allowClose && !endpoint);
-      $('#connectionModal').classList.remove('hidden');
-      updateConnectionNotice();
-      setTimeout(() => $('#endpointInput').focus(), 100);
-    }
-
-    function closeConnectionModal() {
-      if (!endpoint) {
-        toast('กรุณาวางลิงก์ Apps Script ก่อน');
-        return;
-      }
-      $('#connectionModal').classList.add('hidden');
-      if (!registration) $('#registerModal').classList.remove('hidden');
-    }
-
-    function saveEndpoint() {
-      const value = normalizeEndpoint($('#endpointInput').value);
-      if (!isValidEndpoint(value)) {
-        toast('ลิงก์ต้องเป็น Apps Script Web app และลงท้ายด้วย /exec');
-        return;
-      }
-
-      endpoint = value;
-      updateConnectionNotice();
-      sendToSheets('ping', { sentAt: new Date().toISOString() });
-      $('#connectionModal').classList.add('hidden');
-      if (!registration) $('#registerModal').classList.remove('hidden');
-      toast('บันทึกลิงก์ Google Sheets แล้ว');
-    }
-
-    function updateConnectionNotice() {
-      const notice = $('#endpointNotice');
-      if (endpoint) {
-        notice.className = 'notice connection-ok';
-        notice.textContent = 'เชื่อมต่อแล้ว: ' + compactUrl(endpoint);
+    window[callbackName] = response => {
+      cleanup();
+      if (response && response.ok) {
+        resolve(response.result);
       } else {
-        notice.className = 'notice';
-        notice.textContent = 'ยังไม่ได้การเชื่อมต่อข้อมูล';
+        reject(new Error(response && response.error ? response.error : 'Google Sheets ตอบกลับไม่สำเร็จ'));
       }
+    };
+
+    const query = new URLSearchParams({
+      action: name,
+      args: JSON.stringify(args),
+      callback: callbackName,
+      _: String(Date.now())
+    });
+
+    script.async = true;
+    script.src = `${APPS_SCRIPT_URL}?${query.toString()}`;
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('โหลดคำตอบจาก Google Sheets ไม่สำเร็จ'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+function loadClassicScript(url) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-fallback-src="${url}"]`);
+    if (existing) {
+      existing.addEventListener('load', resolve, { once: true });
+      existing.addEventListener('error', reject, { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = url;
+    script.async = true;
+    script.dataset.fallbackSrc = url;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`โหลดไฟล์ไม่สำเร็จ: ${url}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureAiLibraries() {
+  if (!window.tf) {
+    await loadClassicScript('https://unpkg.com/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
+  }
+  if (!window.poseDetection) {
+    await loadClassicScript('https://unpkg.com/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js');
+  }
+  if (!window.tf || !window.poseDetection) {
+    throw new Error('โหลดไลบรารี AI ไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตหรือเครือข่ายของโรงเรียน');
+  }
+}
+
+async function ensureDetector() {
+  await ensureAiLibraries();
+  await tf.ready();
+
+  if (tf.getBackend() !== 'webgl') {
+    try {
+      await tf.setBackend('webgl');
+      await tf.ready();
+    } catch (error) {
+      console.warn('WebGL ใช้ไม่ได้ ระบบจะใช้ backend ที่มีอยู่', error);
+    }
+  }
+
+  if (detector) return;
+
+  const detectorConfig = {
+    modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,
+    enableTracking: true,
+    trackerType: poseDetection.TrackerType.BoundingBox,
+    minPoseScore: 0.18,
+    multiPoseMaxDimension: 256
+  };
+
+  detector = await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    detectorConfig
+  );
+}
+
+async function init() {
+  try {
+    const loadedConfig = await serverCall('getAppConfig');
+    config = { ...config, ...loadedConfig };
+  } catch (error) {
+    console.warn('โหลดค่าตั้งต้นไม่ได้ ใช้ค่าในโปรแกรมแทน', error);
+  }
+
+  const saved = JSON.parse(localStorage.getItem('smartsitUser') || '{}');
+  ['name', 'userId', 'age', 'role', 'activityMode', 'organization', 'className', 'expectedPeople']
+    .forEach(key => {
+      if (saved[key] && $(key)) $(key).value = saved[key];
+    });
+  selectMode(saved.appMode || 'personal');
+  if (saved.userId) $('reportUserId').value = saved.userId;
+  if (saved.organization) $('reportOrganization').value = saved.organization;
+  if (saved.className) $('reportClassName').value = saved.className;
+  if (saved.name && $('headerUser')) $('headerUser').textContent = saved.name + ' · ' + ((saved.appMode || 'personal') === 'classroom' ? 'ห้องเรียน' : 'ส่วนบุคคล');
+}
+
+
+document.querySelectorAll('.mode-card').forEach(card => {
+  card.addEventListener('click', () => selectMode(card.dataset.mode));
+});
+
+$('homeNavBtn').addEventListener('click', () => {
+  if (stream) { toast('กรุณากด “สิ้นสุดและบันทึก” ก่อนออกจากหน้าตรวจ'); return; }
+  showScreen('setupScreen');
+});
+$('reportNavBtn').addEventListener('click', openReportScreen);
+$('setupReportBtn').addEventListener('click', openReportScreen);
+$('summaryReportBtn').addEventListener('click', openReportScreen);
+$('loadReportBtn').addEventListener('click', loadReport);
+$('resetReportBtn').addEventListener('click', resetReportFilters);
+$('exportReportBtn').addEventListener('click', exportReportCsv);
+$('printReportBtn').addEventListener('click', () => window.print());
+
+function selectMode(mode) {
+  appMode = mode;
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.classList.toggle('active', card.dataset.mode === mode);
+  });
+  document.querySelector(`input[name="appMode"][value="${mode}"]`).checked = true;
+  document.querySelectorAll('.personal-field').forEach(el => el.classList.toggle('hidden', mode !== 'personal'));
+  document.querySelectorAll('.classroom-field').forEach(el => el.classList.toggle('hidden', mode !== 'classroom'));
+  $('nameLabel').textContent = mode === 'personal' ? 'ชื่อหรือชื่อเล่น *' : 'ชื่อผู้ควบคุม/ครู *';
+  $('idLabel').textContent = mode === 'personal' ? 'รหัสผู้ใช้งาน *' : 'รหัสการทดลอง/ครู *';
+  $('organization').required = mode === 'classroom';
+  $('className').required = mode === 'classroom';
+  $('cameraFacing').value = mode === 'classroom' ? 'environment' : 'user';
+}
+
+async function handleStart(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const form = $('userForm');
+  if (!form.reportValidity()) return;
+
+  user = {
+    appMode,
+    name: $('name').value.trim(),
+    userId: $('userId').value.trim(),
+    age: $('age').value,
+    role: $('role').value,
+    activityMode: $('activityMode').value,
+    organization: $('organization').value.trim(),
+    className: $('className').value.trim(),
+    expectedPeople: Number($('expectedPeople').value || 0),
+    cameraFacing: $('cameraFacing').value
+  };
+
+  facingMode = user.cameraFacing;
+  if ($('headerUser')) $('headerUser').textContent = user.name + ' · ' + (appMode === 'classroom' ? 'ห้องเรียน' : 'ส่วนบุคคล');
+  if ($('currentModeText')) $('currentModeText').textContent = appMode === 'classroom' ? 'ห้องเรียน' : 'เดี่ยว';
+  localStorage.setItem('smartsitUser', JSON.stringify(user));
+  await beginSession();
+}
+
+$('userForm').addEventListener('submit', handleStart);
+$('startBtn').addEventListener('click', handleStart);
+
+async function beginSession() {
+  loading(true, 'กำลังโหลด AI ครั้งแรกอาจใช้เวลา 10–30 วินาที...');
+  try {
+    await ensureDetector();
+    loading(true, 'กำลังเปิดกล้อง...');
+    await openCamera();
+
+    baseline = null;
+    latestPersonalMetrics = null;
+    stats = resetStats();
+    startedAt = new Date();
+    lastTick = performance.now();
+    badSince = null;
+    lastAlertAt = 0;
+    consecutiveAiErrors = 0;
+    configureMonitor();
+    showScreen('monitorScreen');
+    schedulePrediction();
+  } catch (error) {
+    console.error(error);
+    stopCamera();
+    toast(cameraError(error), 8000);
+    showScreen('setupScreen');
+  } finally {
+    loading(false);
+  }
+}
+
+function configureMonitor() {
+  const classroom = appMode === 'classroom';
+  $('liveLabel').textContent = classroom ? 'LIVE CLASSROOM AI' : 'LIVE PERSONAL AI';
+  $('calibrateBtn').classList.toggle('hidden', classroom);
+  $('controlTitle').textContent = classroom ? 'การตรวจแบบห้องเรียน' : 'ตั้งค่าท่ามาตรฐาน';
+  $('controlText').textContent = classroom
+    ? 'ตั้งกล้องให้เห็นนักเรียนช่วงศีรษะถึงสะโพก ระบบตรวจได้พร้อมกันสูงสุด 6 คนในรุ่นทดลอง'
+    : 'นั่งในท่าที่ถูกต้อง แล้วกดบันทึกท่ามาตรฐาน';
+  $('metricALabel').textContent = classroom ? 'จำนวนที่ตรวจพบ' : 'เวลาท่าดี';
+  $('metricBLabel').textContent = classroom ? 'ควรปรับ' : 'แจ้งเตือน';
+  $('issue1Label').textContent = classroom ? 'นั่งดี' : 'คอยื่น/ก้มหน้า';
+  $('issue2Label').textContent = classroom ? 'ควรปรับ' : 'ลำตัวเอียง/ค่อม';
+  $('issue3Label').textContent = classroom ? 'ตรวจไม่ชัด' : 'ไหล่เอียง';
+  $('cameraMessage').textContent = classroom
+    ? 'จัดกล้องให้เห็นนักเรียนหลายคนและลดการบังกัน'
+    : 'จัดตำแหน่งให้เห็นศีรษะ ไหล่ และสะโพก';
+  updateStatus(classroom ? 'classReady' : 'setup');
+}
+
+async function openCamera() {
+  stopCamera();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error('เบราว์เซอร์นี้ไม่รองรับการเปิดกล้อง กรุณาใช้ Chrome หรือ Edge รุ่นปัจจุบัน');
+  }
+
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: { ideal: facingMode },
+      width: { ideal: appMode === 'classroom' ? 1280 : 960 },
+      height: { ideal: appMode === 'classroom' ? 720 : 720 }
+    },
+    audio: false
+  });
+
+  const video = $('video');
+  video.srcObject = stream;
+  await video.play();
+
+  const mirrored = facingMode === 'user';
+  video.classList.toggle('mirror', mirrored);
+  $('canvas').classList.toggle('mirror', mirrored);
+}
+
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+  if (animationId) cancelAnimationFrame(animationId);
+  animationId = null;
+  inferenceBusy = false;
+}
+
+function cameraError(error) {
+  if (error && error.name === 'NotAllowedError') {
+    return 'กรุณาอนุญาตใช้กล้องที่ไอคอนรูปกล้องข้างแถบที่อยู่ แล้วรีเฟรชหน้าเว็บไซต์';
+  }
+  if (error && error.name === 'NotFoundError') return 'ไม่พบกล้องในอุปกรณ์';
+  if (error && error.name === 'NotReadableError') return 'กล้องกำลังถูกโปรแกรมอื่นใช้งาน กรุณาปิดโปรแกรมกล้องหรือประชุมออนไลน์ก่อน';
+  return 'เปิดระบบไม่สำเร็จ: ' + (error && error.message ? error.message : String(error || 'ไม่ทราบสาเหตุ'));
+}
+
+function schedulePrediction() {
+  if (!stream) return;
+  animationId = requestAnimationFrame(predict);
+}
+
+async function predict(timestamp) {
+  if (!stream) return;
+
+  const video = $('video');
+  if (video.readyState < 2 || inferenceBusy || timestamp - lastInferenceAt < 100) {
+    schedulePrediction();
+    return;
+  }
+
+  inferenceBusy = true;
+  lastInferenceAt = timestamp;
+
+  try {
+    const poses = await detector.estimatePoses(video, {
+      maxPoses: appMode === 'classroom' ? MAX_CLASSROOM_POSES : 1,
+      flipHorizontal: false
+    });
+    consecutiveAiErrors = 0;
+    processResult(poses || [], $('canvas'));
+  } catch (error) {
+    consecutiveAiErrors++;
+    console.error('AI inference error', error);
+    if (consecutiveAiErrors === 3) {
+      toast('ระบบ AI สะดุดชั่วคราว กำลังลองใหม่...');
+    }
+    if (consecutiveAiErrors > 12) {
+      stopCamera();
+      toast('ระบบ AI ทำงานต่อไม่ได้ กรุณารีเฟรชหน้าเว็บแล้วลองใหม่', 8000);
+      showScreen('setupScreen');
+    }
+  } finally {
+    inferenceBusy = false;
+    schedulePrediction();
+  }
+}
+
+function processResult(poses, canvas) {
+  const video = $('video');
+  if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  }
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const visiblePoses = poses
+    .filter(pose => Number(pose.score || averageKeypointScore(pose)) >= 0.12)
+    .sort((a, b) => poseArea(b) - poseArea(a));
+
+  if (appMode === 'classroom') {
+    processClassroom(visiblePoses.slice(0, MAX_CLASSROOM_POSES), ctx, canvas);
+  } else {
+    processPersonal(visiblePoses[0], ctx, canvas);
+  }
+}
+
+function processPersonal(pose, ctx, canvas) {
+  if (!pose) {
+    latestPersonalMetrics = null;
+    tick('unknown');
+    stats.noPoseCount++;
+    updateStatus('unknown');
+    $('cameraMessage').textContent = 'ยังไม่พบร่างกาย ลองถอยกล้องให้เห็นตั้งแต่ศีรษะถึงสะโพก';
+    return;
+  }
+
+  const measured = metrics(pose, canvas);
+  latestPersonalMetrics = measured.valid ? measured : null;
+  const state = !baseline ? 'setup' : previewBad(measured) ? 'bad' : 'good';
+  drawPose(ctx, pose, state);
+
+  if (!measured.valid) {
+    tick('unknown');
+    updateStatus('unknown');
+    $('cameraMessage').textContent = 'จุดศีรษะ ไหล่ หรือสะโพกยังไม่ชัด ลองปรับมุมกล้อง';
+    return;
+  }
+
+  if (!baseline) {
+    tick('unknown');
+    updateStatus('setup');
+    $('cameraMessage').textContent = 'นั่งในท่าที่ถูกต้อง แล้วกด “บันทึกท่ามาตรฐาน”';
+    return;
+  }
+
+  const result = evaluatePersonal(measured);
+  tick(result.isBad ? 'bad' : 'good');
+  $('liveScore').textContent = result.score;
+  $('scoreBar').style.width = result.score + '%';
+  const scoreOrb = document.querySelector('.score-orb');
+  if (scoreOrb) scoreOrb.style.background = `conic-gradient(#45d4a0 ${result.score * 3.6}deg,rgba(255,255,255,.15) 0)`;
+  $('issue1').textContent = result.forward ? 'ควรปรับ' : 'ปกติ';
+  $('issue2').textContent = result.slouch ? 'ควรปรับ' : 'ปกติ';
+  $('issue3').textContent = result.shoulder ? 'ควรปรับ' : 'ปกติ';
+
+  if (result.isBad) {
+    updateStatus('bad', result.issues.join(' · '));
+    $('cameraMessage').textContent = 'คำแนะนำ: ' + result.issues.join(' และ ');
+  } else {
+    updateStatus('good');
+    $('cameraMessage').textContent = 'เยี่ยมมาก รักษาท่านั่งนี้ไว้';
+  }
+}
+
+function processClassroom(poses, ctx, canvas) {
+  let good = 0;
+  let bad = 0;
+  let unclear = 0;
+
+  poses.forEach((pose, index) => {
+    const measured = metrics(pose, canvas);
+    let state = 'unclear';
+
+    if (!measured.valid) {
+      unclear++;
+    } else {
+      const result = evaluateClassroom(measured);
+      state = result.isBad ? 'bad' : 'good';
+      if (result.isBad) bad++;
+      else good++;
     }
 
-    function normalizeEndpoint(value) {
-      return String(value || '').trim().replace(/\s+/g, '');
-    }
+    drawPose(ctx, pose, state);
+    drawPersonLabel(ctx, pose, index + 1, state, canvas);
+  });
 
-    function isValidEndpoint(value) {
-      return /^https:\/\/script\.google\.com\/(?:a\/macros\/[^/]+\/)?macros\/s\/[^/]+\/exec(?:\?.*)?$/i.test(value)
-        || /^https:\/\/script\.google\.com\/a\/macros\/[^/]+\/s\/[^/]+\/exec(?:\?.*)?$/i.test(value);
-    }
+  const detected = poses.length;
+  stats.detectedSum += detected;
+  stats.detectedFrames++;
+  stats.maxDetected = Math.max(stats.maxDetected, detected);
+  stats.personObservations += good + bad;
+  stats.goodPersonObservations += good;
+  stats.badPersonObservations += bad;
 
-    function compactUrl(value) {
-      if (value.length < 60) return value;
-      return value.slice(0, 34) + '…' + value.slice(-18);
-    }
+  const known = good + bad;
+  const badRatio = known ? bad / known : 0;
+  tick(detected === 0 ? 'unknown' : badRatio > Number(config.classroomBadRatioAlert || 0.35) ? 'bad' : 'good');
 
-    function setMode(mode) {
-      $$('.mode').forEach((card) => card.classList.toggle('active', card.dataset.mode === mode));
-      $('#groupFields').classList.toggle('hidden', mode !== 'group');
+  const score = known ? Math.round((good / known) * 100) : 0;
+  $('liveScore').textContent = score;
+  $('scoreBar').style.width = score + '%';
+  const scoreOrb = document.querySelector('.score-orb');
+  if (scoreOrb) scoreOrb.style.background = `conic-gradient(#45d4a0 ${score * 3.6}deg,rgba(255,255,255,.15) 0)`;
+  $('metricA').textContent = detected;
+  $('metricB').textContent = bad;
+  $('issue1').textContent = good + ' คน';
+  $('issue2').textContent = bad + ' คน';
+  $('issue3').textContent = unclear + ' คน';
 
-      if (mode === 'group' && $('#members').children.length === 0) {
-        addMember();
-        addMember();
+  if (!detected) {
+    updateStatus('classUnknown');
+    $('cameraMessage').textContent = 'ยังไม่พบนักเรียนในภาพ';
+  } else if (badRatio > Number(config.classroomBadRatioAlert || 0.35)) {
+    updateStatus('classBad', `ควรปรับ ${bad} จาก ${known} คน`);
+    $('cameraMessage').textContent = `พบ ${detected} คน · นั่งดี ${good} · ควรปรับ ${bad}`;
+  } else {
+    updateStatus('classGood', `นั่งดี ${good} จาก ${known} คน`);
+    $('cameraMessage').textContent = `พบ ${detected} คน · ภาพรวมท่านั่งดี`;
+  }
+}
+
+function keypointMap(pose) {
+  const result = {};
+  (pose.keypoints || []).forEach(point => {
+    if (point && point.name) result[point.name] = point;
+  });
+  return result;
+}
+
+function visible(point, minimum) {
+  return !!point && Number(point.score || 0) >= minimum;
+}
+
+function normalizedPoint(point, canvas) {
+  return {
+    x: point.x / Math.max(1, canvas.width),
+    y: point.y / Math.max(1, canvas.height),
+    visibility: Number(point.score || 0)
+  };
+}
+
+function midpoint(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function distance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function metrics(pose, canvas) {
+  const map = keypointMap(pose);
+  const minimum = Math.max(0.2, Math.min(0.65, Number(config.minVisibility || 0.35)));
+
+  const rawRequired = [map.nose, map.left_shoulder, map.right_shoulder, map.left_hip, map.right_hip];
+  const valid = rawRequired.every(point => visible(point, minimum));
+
+  if (!valid) return { valid: false };
+
+  const nose = normalizedPoint(map.nose, canvas);
+  const leftShoulder = normalizedPoint(map.left_shoulder, canvas);
+  const rightShoulder = normalizedPoint(map.right_shoulder, canvas);
+  const leftHip = normalizedPoint(map.left_hip, canvas);
+  const rightHip = normalizedPoint(map.right_hip, canvas);
+  const shoulderMid = midpoint(leftShoulder, rightShoulder);
+  const hipMid = midpoint(leftHip, rightHip);
+  const torsoHeight = Math.max(0.001, distance(shoulderMid, hipMid));
+
+  const visibleEars = [map.left_ear, map.right_ear]
+    .filter(point => visible(point, minimum * 0.8))
+    .map(point => normalizedPoint(point, canvas));
+  const headPoint = visibleEars.length === 2
+    ? midpoint(visibleEars[0], visibleEars[1])
+    : visibleEars[0] || nose;
+
+  return {
+    valid: true,
+    headHorizontal: (headPoint.x - shoulderMid.x) / torsoHeight,
+    headHeight: (shoulderMid.y - nose.y) / torsoHeight,
+    torsoLean: Math.abs(shoulderMid.x - hipMid.x) / torsoHeight,
+    shoulderTilt: Math.abs(leftShoulder.y - rightShoulder.y) / torsoHeight,
+    torsoHeight
+  };
+}
+
+function evaluatePersonal(measured) {
+  const headShift = Math.abs(measured.headHorizontal - baseline.headHorizontal);
+  const headDrop = baseline.headHeight - measured.headHeight;
+  const leanChange = Math.abs(measured.torsoLean - baseline.torsoLean);
+  const shoulderChange = Math.max(0, measured.shoulderTilt - baseline.shoulderTilt);
+
+  const forwardLimit = Math.max(0.10, Number(config.forwardHeadThreshold || 0.12));
+  const slouchLimit = Math.max(0.10, Number(config.slouchThreshold || 0.12));
+  const shoulderLimit = Math.max(0.06, Number(config.shoulderTiltThreshold || 0.08));
+
+  const forward = headShift > forwardLimit || headDrop > forwardLimit;
+  const slouch = leanChange > slouchLimit;
+  const shoulder = shoulderChange > shoulderLimit;
+
+  if (forward) stats.issueFrames.forward++;
+  if (slouch) stats.issueFrames.slouch++;
+  if (shoulder) stats.issueFrames.shoulder++;
+
+  const issues = [
+    forward && 'ยกศีรษะหรือดึงคอกลับเล็กน้อย',
+    slouch && 'จัดลำตัวให้อยู่กึ่งกลางมากขึ้น',
+    shoulder && 'ปรับระดับไหล่ให้ใกล้เคียงกัน'
+  ].filter(Boolean);
+
+  return {
+    forward,
+    slouch,
+    shoulder,
+    isBad: issues.length > 0,
+    issues,
+    score: Math.max(0, 100 - (forward ? 30 : 0) - (slouch ? 35 : 0) - (shoulder ? 20 : 0))
+  };
+}
+
+function evaluateClassroom(measured) {
+  const headLow = measured.headHeight < 0.48;
+  const torsoLean = measured.torsoLean > 0.24;
+  const shoulderTilt = measured.shoulderTilt > 0.16;
+  return {
+    forward: headLow,
+    slouch: torsoLean,
+    shoulder: shoulderTilt,
+    isBad: headLow || torsoLean || shoulderTilt
+  };
+}
+
+function previewBad(measured) {
+  if (!baseline || !measured.valid) return false;
+  const headShift = Math.abs(measured.headHorizontal - baseline.headHorizontal);
+  const headDrop = baseline.headHeight - measured.headHeight;
+  const leanChange = Math.abs(measured.torsoLean - baseline.torsoLean);
+  const shoulderChange = Math.max(0, measured.shoulderTilt - baseline.shoulderTilt);
+  return headShift > 0.10 || headDrop > 0.10 || leanChange > 0.10 || shoulderChange > 0.06;
+}
+
+function drawPose(ctx, pose, state) {
+  const color = state === 'good' ? '#22c55e' : state === 'bad' ? '#ef4444' : '#a78bfa';
+  const map = keypointMap(pose);
+  ctx.save();
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = color;
+
+  CONNECTIONS.forEach(([from, to]) => {
+    const a = map[from];
+    const b = map[to];
+    if (!visible(a, 0.22) || !visible(b, 0.22)) return;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  });
+
+  (pose.keypoints || []).forEach(point => {
+    if (!visible(point, 0.22)) return;
+    ctx.beginPath();
+    ctx.fillStyle = '#ffffff';
+    ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawPersonLabel(ctx, pose, number, state, canvas) {
+  const map = keypointMap(pose);
+  const anchor = map.nose || map.left_shoulder || map.right_shoulder;
+  if (!anchor) return;
+  const color = state === 'good' ? '#22c55e' : state === 'bad' ? '#ef4444' : '#a78bfa';
+  const x = Math.max(30, Math.min(canvas.width - 30, anchor.x));
+  const y = Math.max(32, anchor.y - 26);
+
+  ctx.save();
+  ctx.font = 'bold 20px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(15, 12, 20, 0.78)';
+  ctx.fillRect(x - 25, y - 16, 50, 32);
+  ctx.fillStyle = color;
+  ctx.fillText('P' + number, x, y);
+  ctx.restore();
+}
+
+function averageKeypointScore(pose) {
+  const points = pose.keypoints || [];
+  if (!points.length) return 0;
+  return points.reduce((sum, point) => sum + Number(point.score || 0), 0) / points.length;
+}
+
+function poseArea(pose) {
+  if (pose.box && pose.box.width && pose.box.height) return pose.box.width * pose.box.height;
+  const points = (pose.keypoints || []).filter(point => Number(point.score || 0) >= 0.2);
+  if (!points.length) return 0;
+  const xs = points.map(point => point.x);
+  const ys = points.map(point => point.y);
+  return (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys));
+}
+
+function tick(state) {
+  const now = performance.now();
+  const delta = Math.max(0, Math.min(1, (now - lastTick) / 1000));
+  lastTick = now;
+  stats.totalSeconds += delta;
+
+  if (state === 'good') {
+    stats.goodSeconds += delta;
+    badSince = null;
+  } else if (state === 'bad') {
+    stats.badSeconds += delta;
+    if (!badSince) badSince = Date.now();
+    maybeAlert();
+  } else {
+    stats.unknownSeconds += delta;
+    badSince = null;
+  }
+
+  $('sessionTime').textContent = formatTime(stats.totalSeconds);
+  if (appMode === 'personal') {
+    $('metricA').textContent = formatTime(stats.goodSeconds);
+    $('metricB').textContent = stats.alertCount;
+  }
+}
+
+function maybeAlert() {
+  const delay = Number(config.alertDelaySeconds || 8) * 1000;
+  if (badSince && Date.now() - badSince >= delay && Date.now() - lastAlertAt >= delay) {
+    stats.alertCount++;
+    lastAlertAt = Date.now();
+    if (navigator.vibrate) navigator.vibrate([150, 80, 150]);
+    speak(appMode === 'classroom'
+      ? 'มีนักเรียนบางส่วนควรปรับท่านั่งค่ะ'
+      : 'ลองปรับท่านั่งให้ตรงขึ้นอีกนิดนะ');
+  }
+}
+
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'th-TH';
+  speechSynthesis.speak(utterance);
+}
+
+function updateStatus(type, detail = '') {
+  const statusMap = {
+    setup: ['🧘', 'ตั้งค่าท่ามาตรฐาน', 'นั่งให้ถูกท่าแล้วกดบันทึก'],
+    good: ['😊', 'ท่านั่งดี', 'รักษาท่านี้ต่อไป'],
+    bad: ['😟', 'ควรปรับท่า', detail],
+    unknown: ['📷', 'ยังตรวจไม่ชัด', 'ให้เห็นศีรษะ ไหล่ และสะโพก'],
+    classReady: ['🏫', 'พร้อมตรวจห้องเรียน', 'จัดตำแหน่งกล้องให้เห็นผู้เรียนหลายคน'],
+    classGood: ['✅', 'ภาพรวมห้องดี', detail],
+    classBad: ['⚠️', 'มีผู้ควรปรับท่า', detail],
+    classUnknown: ['📷', 'ยังไม่พบผู้เรียน', 'ปรับมุมหรือระยะกล้อง']
+  };
+  const status = statusMap[type];
+  $('statusIcon').textContent = status[0];
+  $('statusTitle').textContent = status[1];
+  $('statusDesc').textContent = status[2] || '';
+}
+
+$('calibrateBtn').addEventListener('click', () => {
+  if (!latestPersonalMetrics || !latestPersonalMetrics.valid) {
+    toast('ยังตรวจจุดศีรษะ ไหล่ และสะโพกไม่ชัด กรุณาปรับกล้องก่อน');
+    return;
+  }
+  baseline = {
+    headHorizontal: latestPersonalMetrics.headHorizontal,
+    headHeight: latestPersonalMetrics.headHeight,
+    torsoLean: latestPersonalMetrics.torsoLean,
+    shoulderTilt: latestPersonalMetrics.shoulderTilt
+  };
+  toast('บันทึกท่ามาตรฐานแล้ว');
+  speak('พร้อมแล้ว เริ่มดูแลท่านั่งได้เลย');
+});
+
+$('switchCameraBtn').addEventListener('click', async () => {
+  facingMode = facingMode === 'user' ? 'environment' : 'user';
+  loading(true, 'กำลังสลับกล้อง...');
+  try {
+    await openCamera();
+    baseline = null;
+    latestPersonalMetrics = null;
+    toast('สลับกล้องแล้ว');
+  } catch (error) {
+    toast(cameraError(error));
+  } finally {
+    loading(false);
+  }
+});
+
+$('stopBtn').addEventListener('click', finishSession);
+$('backBtn').addEventListener('click', () => showScreen('setupScreen'));
+$('restartBtn').addEventListener('click', beginSession);
+
+async function finishSession() {
+  stopCamera();
+  loading(true, 'กำลังบันทึกผล...');
+
+  const ended = new Date();
+  const denominator = Math.max(
+    1,
+    appMode === 'classroom'
+      ? stats.personObservations
+      : stats.goodSeconds + stats.badSeconds
+  );
+  const score = Math.round(
+    ((appMode === 'classroom' ? stats.goodPersonObservations : stats.goodSeconds) / denominator) * 100
+  );
+
+  const mainIssue = Object.entries(stats.issueFrames).sort((a, b) => b[1] - a[1])[0];
+  const issueNames = {
+    forward: 'คอยื่นหรือก้มหน้า',
+    slouch: 'ลำตัวเอียงหรือค่อม',
+    shoulder: 'ไหล่เอียง'
+  };
+
+  const payload = {
+    ...user,
+    sessionId: window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+    totalSeconds: Math.round(stats.totalSeconds),
+    goodSeconds: Math.round(stats.goodSeconds),
+    badSeconds: Math.round(stats.badSeconds),
+    unknownSeconds: Math.round(stats.unknownSeconds),
+    score,
+    alertCount: stats.alertCount,
+    mainIssue: mainIssue && mainIssue[1] > 0 ? issueNames[mainIssue[0]] : 'ไม่พบปัญหาเด่น',
+    forwardHeadCount: stats.issueFrames.forward,
+    slouchCount: stats.issueFrames.slouch,
+    shoulderTiltCount: stats.issueFrames.shoulder,
+    noPoseCount: stats.noPoseCount,
+    averageDetected: stats.detectedFrames
+      ? Number((stats.detectedSum / stats.detectedFrames).toFixed(1))
+      : 0,
+    maxDetected: stats.maxDetected,
+    personObservations: stats.personObservations,
+    goodPersonObservations: stats.goodPersonObservations,
+    badPersonObservations: stats.badPersonObservations,
+    startedAt: startedAt ? startedAt.toISOString() : '',
+    endedAt: ended.toISOString(),
+    device: navigator.userAgent.slice(0, 200),
+    cameraFacing: facingMode
+  };
+
+  try {
+    await serverCall('saveSession', payload);
+    renderSummary(payload);
+    showScreen('summaryScreen');
+    await loadHistory();
+    toast('บันทึกผลลง Google Sheets แล้ว');
+  } catch (error) {
+    console.error(error);
+    renderSummary(payload);
+    showScreen('summaryScreen');
+    toast('แสดงผลได้ แต่บันทึกไม่สำเร็จ: ' + (error.message || error));
+  } finally {
+    loading(false);
+  }
+}
+
+function renderSummary(payload) {
+  const classroom = payload.appMode === 'classroom';
+  $('summaryTitle').textContent = classroom ? 'สรุปผลการตรวจห้องเรียน' : 'สรุปผลการตรวจส่วนบุคคล';
+  $('summaryName').textContent = classroom
+    ? `${payload.organization} · ${payload.className} · ผู้ควบคุม ${payload.name}`
+    : `${payload.name} · ${payload.activityMode}`;
+  $('finalScore').textContent = payload.score;
+  $('scoreCircle').style.background = `conic-gradient(var(--p) ${payload.score * 3.6}deg,#ede9f5 0)`;
+  $('finalMessage').textContent = payload.score >= 90
+    ? 'ยอดเยี่ยมมาก!'
+    : payload.score >= 75
+      ? 'ภาพรวมอยู่ในระดับดี'
+      : 'ควรปรับตำแหน่งกล้องและฝึกท่านั่งต่อเนื่อง';
+  $('sumTotal').textContent = formatMinutes(payload.totalSeconds);
+  $('sumGood').textContent = classroom ? payload.averageDetected + ' คน' : formatMinutes(payload.goodSeconds);
+  $('sumBad').textContent = classroom ? payload.maxDetected + ' คน' : formatMinutes(payload.badSeconds);
+  $('sumAlerts').textContent = classroom ? payload.badPersonObservations : payload.alertCount;
+  $('sumGoodLabel').textContent = classroom ? 'พบเฉลี่ย' : 'นั่งถูกท่า';
+  $('sumBadLabel').textContent = classroom ? 'พบสูงสุด' : 'ควรปรับท่า';
+  $('sumAlertLabel').textContent = classroom ? 'การตรวจพบที่ควรปรับ' : 'แจ้งเตือน';
+  $('summaryMainIssue').textContent = payload.mainIssue || 'ไม่พบปัญหาเด่น';
+  $('summaryStarted').textContent = payload.startedAt ? new Date(payload.startedAt).toLocaleString('th-TH') : '–';
+  $('summaryEnded').textContent = payload.endedAt ? new Date(payload.endedAt).toLocaleString('th-TH') : '–';
+}
+
+async function loadHistory() {
+  try {
+    const data = await serverCall('getDashboard', user.userId, appMode);
+    const rows = data.sessions || [];
+    $('history').innerHTML = '<h3>ประวัติล่าสุด</h3>' + rows.slice(0, 5).map(row => `
+      <div class="history-row">
+        <span>${new Date(row.SavedAt).toLocaleString('th-TH')}</span>
+        <b>${row.Score} คะแนน</b>
+        <span>${formatMinutes(row.TotalSeconds)}</span>
+        <span>${escapeHtml(row.MainIssue || '')}</span>
+      </div>
+    `).join('');
+
+    const labels = rows.slice(0, 10).reverse().map(row =>
+      new Date(row.SavedAt).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })
+    );
+    const scores = rows.slice(0, 10).reverse().map(row => Number(row.Score));
+
+    if (chart) chart.destroy();
+    chart = new Chart($('historyChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{ label: 'คะแนน', data: scores, tension: 0.35, fill: true }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { min: 0, max: 100 } },
+        plugins: { legend: { display: false } }
       }
-    }
-
-    function addMember() {
-      const container = $('#members');
-      if (container.children.length >= MAX_GROUP_SIZE) {
-        toast('โหมดกลุ่มรองรับสูงสุด 4 คน');
-        return;
-      }
-
-      const index = container.children.length + 1;
-      const row = document.createElement('div');
-      row.className = 'member-row';
-      row.innerHTML = `
-        <input class="member-id" autocomplete="off" placeholder="รหัสสมาชิก ${index}">
-        <input class="member-name" autocomplete="off" placeholder="ชื่อสมาชิก ${index}">
-        <button class="remove" type="button" title="ลบสมาชิก">×</button>
-      `;
-
-      row.querySelector('.remove').addEventListener('click', () => {
-        if (container.children.length <= 2) {
-          toast('โหมดกลุ่มต้องมีสมาชิกอย่างน้อย 2 คน');
-          return;
-        }
-        row.remove();
-        renumberMemberPlaceholders();
-      });
-
-      container.appendChild(row);
-    }
-
-    function renumberMemberPlaceholders() {
-      $$('.member-row').forEach((row, index) => {
-        row.querySelector('.member-id').placeholder = `รหัสสมาชิก ${index + 1}`;
-        row.querySelector('.member-name').placeholder = `ชื่อสมาชิก ${index + 1}`;
-      });
-    }
-
-    function registerUser() {
-      const modeCard = $('.mode.active');
-      const mode = modeCard ? modeCard.dataset.mode : 'single';
-      const userId = $('#userId').value.trim();
-      const fullName = $('#fullName').value.trim();
-      const department = $('#department').value.trim();
-      const groupName = $('#groupName').value.trim();
-      const members = $$('.member-row')
-        .map((row, index) => ({
-          userId: row.querySelector('.member-id').value.trim() || `MEMBER-${index + 1}`,
-          fullName: row.querySelector('.member-name').value.trim()
-        }))
-        .filter((member) => member.fullName);
-
-      if (!userId) {
-        toast('กรุณากรอกรหัสนักศึกษา/รหัสผู้ใช้');
-        $('#userId').focus();
-        return;
-      }
-
-      if (!fullName) {
-        toast('กรุณากรอกชื่อ–นามสกุล');
-        $('#fullName').focus();
-        return;
-      }
-
-      if (mode === 'group') {
-        if (!groupName) {
-          toast('กรุณากรอกชื่อกลุ่ม');
-          $('#groupName').focus();
-          return;
-        }
-        if (members.length < 2) {
-          toast('กรุณากรอกชื่อสมาชิกอย่างน้อย 2 คน');
-          return;
-        }
-      }
-
-      registration = {
-        userId,
-        fullName,
-        department,
-        mode,
-        groupId: mode === 'group' ? createId('GRP') : '',
-        groupName: mode === 'group' ? groupName : '',
-        members: mode === 'group' ? members : []
-      };
-
-      sendToSheets('register', registration);
-      $('#registerModal').classList.add('hidden');
-      $('#userPill').textContent = mode === 'single' ? `👤 ${fullName}` : `👥 ${groupName}`;
-      renderInitialPeople();
-      toast('ลงทะเบียนเรียบร้อยแล้ว');
-    }
-
-    async function startCamera() {
-      if (!registration) {
-        $('#registerModal').classList.remove('hidden');
-        toast('กรุณาลงทะเบียนก่อน');
-        return;
-      }
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast('เบราว์เซอร์นี้ไม่รองรับการเปิดกล้อง กรุณาใช้ Chrome, Edge หรือ Safari');
-        return;
-      }
-
-      try {
-        // เปิดกล้องก่อน เพื่อให้ผู้ใช้เห็นภาพทันที แม้ไฟล์ AI จะโหลดช้า
-        if (!mediaStream) {
-          showLoading('กำลังเปิดกล้อง…');
-          await openMediaStream();
-          $('#cameraEmpty').classList.add('hidden');
-          $('#cameraLabel').textContent = 'กล้องเปิดแล้ว';
-          $('#modelLabel').textContent = 'กำลังเตรียม AI…';
-          $('#statusMain').textContent = 'กล้องเปิดแล้ว';
-          $('#statusSub').textContent = 'กำลังโหลดระบบตรวจท่านั่ง';
-          hideLoading();
-        }
-
-        showLoading('กำลังโหลด AI ตรวจท่านั่ง…');
-        await loadPoseModel();
-
-        if (!sessionId) {
-          sessionId = createId('SES');
-          sendToSheets('startSession', {
-            ...registration,
-            sessionId,
-            userAgent: navigator.userAgent
-          });
-          resetSessionState();
-          startedAt = Date.now();
-          lastTick = performance.now();
-        }
-
-        running = true;
-        paused = false;
-
-        $('#cameraLabel').textContent = 'กำลังตรวจแบบเรียลไทม์';
-        $('#modelLabel').textContent = 'AI พร้อมใช้งาน';
-        $('#startBtn').disabled = true;
-        $('#startBtn').textContent = 'เปิดกล้อง AR';
-        $('#pauseBtn').disabled = false;
-        $('#switchBtn').disabled = false;
-        $('#finishBtn').disabled = false;
-        $('#statusMain').textContent = 'กำลังตรวจท่านั่ง';
-        $('#statusSub').textContent = 'จัดตำแหน่งให้เห็นศีรษะ ไหล่ และลำตัว';
-
-        hideLoading();
-        detectLoop();
-      } catch (error) {
-        hideLoading();
-        console.error(error);
-
-        // หาก AI โหลดไม่สำเร็จ ให้คงภาพกล้องไว้และให้ลองโหลด AI ใหม่ได้
-        if (mediaStream) {
-          $('#cameraEmpty').classList.add('hidden');
-          $('#cameraLabel').textContent = 'กล้องเปิดแล้ว';
-          $('#modelLabel').textContent = 'AI ยังไม่พร้อม';
-          $('#statusMain').textContent = 'เปิดกล้องสำเร็จ แต่ AI ยังโหลดไม่สำเร็จ';
-          $('#statusSub').textContent = 'กดปุ่มด้านล่างเพื่อลองโหลด AI อีกครั้ง';
-          $('#startBtn').disabled = false;
-          $('#startBtn').textContent = 'ลองโหลด AI อีกครั้ง';
-        }
-
-        toast(readableCameraError(error));
-      }
-    }
-
-    async function loadPoseModel() {
-      if (poseLandmarker) return;
-
-      $('#modelLabel').textContent = 'กำลังโหลด AI…';
-
-      // ใช้ไฟล์ vision_bundle.mjs ตามรูปแบบที่ MediaPipe แนะนำ
-      // และมี CDN สำรอง หากเครือข่ายบล็อกแหล่งใดแหล่งหนึ่ง
-      const sources = [
-        {
-          moduleUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs',
-          wasmUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
-        },
-        {
-          moduleUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.15/vision_bundle.mjs',
-          wasmUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.15/wasm'
-        },
-        {
-          moduleUrl:'https://unpkg.com/@mediapipe/tasks-vision@0.10.15/vision_bundle.mjs',
-          wasmUrl:'https://unpkg.com/@mediapipe/tasks-vision@0.10.15/wasm'
-        }
-      ];
-
-      const modelUrls = [
-        'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
-        'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task'
-      ];
-
-      let lastError = null;
-
-      for (const source of sources) {
-        try {
-          const visionModule = await import(source.moduleUrl);
-          const vision = await visionModule.FilesetResolver.forVisionTasks(source.wasmUrl);
-
-          for (const modelAssetPath of modelUrls) {
-            const options = {
-              baseOptions: {
-                modelAssetPath,
-                delegate:'GPU'
-              },
-              runningMode:'VIDEO',
-              numPoses: registration.mode === 'group' ? MAX_GROUP_SIZE : 1,
-              minPoseDetectionConfidence:.55,
-              minPosePresenceConfidence:.55,
-              minTrackingConfidence:.5
-            };
-
-            try {
-              poseLandmarker = await visionModule.PoseLandmarker.createFromOptions(vision, options);
-              $('#modelLabel').textContent = 'AI พร้อมใช้งาน';
-              return;
-            } catch (gpuError) {
-              console.warn('GPU unavailable, trying CPU', gpuError);
-              try {
-                delete options.baseOptions.delegate;
-                poseLandmarker = await visionModule.PoseLandmarker.createFromOptions(vision, options);
-                $('#modelLabel').textContent = 'AI พร้อมใช้งาน';
-                return;
-              } catch (cpuError) {
-                lastError = cpuError;
-                console.warn('Model source failed', modelAssetPath, cpuError);
-              }
-            }
-          }
-        } catch (sourceError) {
-          lastError = sourceError;
-          console.warn('MediaPipe CDN failed', source.moduleUrl, sourceError);
-        }
-      }
-
-      $('#modelLabel').textContent = 'โหลด AI ไม่สำเร็จ';
-      throw new Error(`โหลด AI ไม่สำเร็จ (${lastError?.message || 'ไม่สามารถเชื่อมต่อไฟล์ AI'})`);
-    }
-
-    async function openMediaStream() {
-      stopTracks();
-
-      mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: facingMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio:false
-      });
-
-      video.srcObject = mediaStream;
-      await video.play();
-
-      canvas.width = video.videoWidth || 1280;
-      canvas.height = video.videoHeight || 720;
-    }
-
-    async function switchCamera() {
-      if (!running) return;
-      try {
-        facingMode = facingMode === 'user' ? 'environment' : 'user';
-        showLoading('กำลังสลับกล้อง…');
-        await openMediaStream();
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        toast('ไม่สามารถสลับกล้องได้');
-      }
-    }
-
-    function togglePause() {
-      if (!running) return;
-      paused = !paused;
-      $('#pauseBtn').textContent = paused ? 'ทำต่อ' : 'พัก';
-      $('#statusMain').textContent = paused ? 'พักการตรวจชั่วคราว' : 'กำลังตรวจท่านั่ง';
-      if (!paused) lastTick = performance.now();
-    }
-
-    function detectLoop() {
-      if (!running) return;
-      animationId = requestAnimationFrame(detectLoop);
-
-      if (paused || video.readyState < 2 || video.currentTime === lastVideoTime) return;
-      lastVideoTime = video.currentTime;
-
-      try {
-        const result = poseLandmarker.detectForVideo(video, performance.now());
-        processResult(result);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    function processResult(result) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const now = performance.now();
-      const delta = Math.min(1.5, Math.max(0, (now - lastTick) / 1000));
-      lastTick = now;
-
-      const poses = (result.landmarks || [])
-        .map((landmarks) => {
-          const shoulderX = ((landmarks[11]?.x || .5) + (landmarks[12]?.x || .5)) / 2;
-          return { landmarks, displayX: 1 - shoulderX };
-        })
-        .sort((a,b) => a.displayX - b.displayX);
-
-      const scores = [];
-
-      poses.forEach((pose, index) => {
-        const personName = getPersonName(index);
-        const assessment = assessPose(pose.landmarks);
-        scores.push(assessment.score);
-        drawPose(pose.landmarks, assessment, personName);
-        updatePersonStats(index, personName, assessment, delta);
-      });
-
-      if (poses.length) {
-        const average = Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length);
-        scoreSamples.push(average);
-        if (scoreSamples.length > 1800) scoreSamples.shift();
-
-        $('#scoreText').textContent = average;
-        $('#scoreOrb').style.setProperty('--score', `${average}%`);
-        $('#statusMain').textContent = average >= 75 ? 'ท่านั่งโดยรวมดีมาก' : average >= 55 ? 'มีบางจุดที่ควรปรับ' : 'ควรปรับท่านั่ง';
-        $('#statusSub').textContent = `${poses.length} คน • ${average >= 75 ? 'รักษาท่านี้ไว้ค่ะ' : 'ดูคำแนะนำรายบุคคลด้านขวา'}`;
-
-        if (average >= 70) totalGood += delta;
-        else totalRisk += delta;
-      } else {
-        $('#statusMain').textContent = 'ยังไม่พบร่างกายในภาพ';
-        $('#statusSub').textContent = 'ถอยกล้องให้เห็นศีรษะ ไหล่ และช่วงลำตัว';
-      }
-
-      renderPeople(poses.length);
-
-      if (now - lastMetricsPaint > 250) {
-        updateMetrics();
-        lastMetricsPaint = now;
-      }
-    }
-
-    function assessPose(landmarks) {
-      const required = [0,7,8,11,12,23,24];
-      const unclear = required.some((index) => !landmarks[index] || (landmarks[index].visibility ?? 1) < .32);
-
-      if (unclear) {
-        return {
-          score:45,
-          type:'not_clear',
-          message:'จัดตำแหน่งให้เห็นศีรษะ ไหล่ และลำตัว'
-        };
-      }
-
-      const shoulderMid = midpoint(landmarks[11], landmarks[12]);
-      const hipMid = midpoint(landmarks[23], landmarks[24]);
-      const earMid = midpoint(landmarks[7], landmarks[8]);
-      const shoulderTilt = Math.abs(landmarks[11].y - landmarks[12].y);
-      const trunkLean = Math.abs(shoulderMid.x - hipMid.x);
-      const neckOffset = Math.abs(earMid.x - shoulderMid.x);
-      const shoulderWidth = Math.abs(landmarks[11].x - landmarks[12].x);
-
-      let score = 100;
-      const risks = [];
-
-      if (shoulderTilt > .055) {
-        score -= 24;
-        risks.push(['shoulder','ไหล่เอียง']);
-      }
-      if (trunkLean > .09) {
-        score -= 24;
-        risks.push(['slouch','ลำตัวเอียงหรือหลังค่อม']);
-      }
-      if (neckOffset > .105) {
-        score -= 22;
-        risks.push(['neck','ศีรษะยื่นหรือก้มคอ']);
-      }
-      if (shoulderWidth > .48) {
-        score -= 16;
-        risks.push(['tooClose','อยู่ใกล้กล้องเกินไป']);
-      }
-
-      score = Math.max(25, Math.round(score));
-
-      return {
-        score,
-        type:risks[0]?.[0] || 'good',
-        message:risks.length ? risks.map((item) => item[1]).join(' • ') : 'ท่านั่งถูกต้อง'
-      };
-    }
-
-    function updatePersonStats(index, name, assessment, delta) {
-      const key = getPersonKey(index);
-
-      if (!personStats[key]) {
-        personStats[key] = {
-          name,
-          good:0,
-          risk:0,
-          scoreSum:0,
-          count:0,
-          neckCount:0,
-          shoulderCount:0,
-          slouchCount:0,
-          tooCloseCount:0,
-          lastType:'good'
-        };
-      }
-
-      const stats = personStats[key];
-      stats.name = name;
-      stats.scoreSum += assessment.score;
-      stats.count += 1;
-
-      if (assessment.score >= 70) stats.good += delta;
-      else stats.risk += delta;
-
-      if (
-        assessment.type !== 'good' &&
-        assessment.type !== 'not_clear' &&
-        assessment.type !== stats.lastType
-      ) {
-        const countKey = assessment.type + 'Count';
-        stats[countKey] = (stats[countKey] || 0) + 1;
-      }
-      stats.lastType = assessment.type;
-
-      if (!riskState[key]) {
-        riskState[key] = { type:'', since:0, lastSaved:0 };
-      }
-
-      const state = riskState[key];
-      const now = Date.now();
-
-      if (assessment.score < 70 && assessment.type !== 'not_clear') {
-        if (state.type !== assessment.type) {
-          state.type = assessment.type;
-          state.since = now;
-        }
-
-        const duration = (now - state.since) / 1000;
-        if (duration >= ALERT_SECONDS && now - state.lastSaved >= SAVE_RISK_EVERY_SECONDS * 1000) {
-          state.lastSaved = now;
-          toast(`${name}: ${assessment.message}`);
-          sendToSheets('riskEvent', {
-            eventId:createId('EVT'),
-            sessionId,
-            personKey:key,
-            personName:name,
-            riskType:assessment.type,
-            score:assessment.score,
-            durationSeconds:Math.round(duration),
-            message:assessment.message
-          });
-        }
-      } else {
-        state.type = '';
-        state.since = 0;
-      }
-    }
-
-    function drawPose(landmarks, assessment, name) {
-      const color = assessment.score >= 75 ? '#44e3a4' : assessment.score >= 55 ? '#ffd166' : '#ff6b6b';
-      const point = (index) => ({
-        x:(1 - landmarks[index].x) * canvas.width,
-        y:landmarks[index].y * canvas.height,
-        visible:(landmarks[index].visibility ?? 1) > .32
-      });
-
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.lineWidth = Math.max(3, canvas.width / 300);
-      ctx.strokeStyle = color;
-      ctx.fillStyle = color;
-
-      CONNECTIONS.forEach(([startIndex,endIndex]) => {
-        const start = point(startIndex);
-        const end = point(endIndex);
-        if (!start.visible || !end.visible) return;
-        ctx.beginPath();
-        ctx.moveTo(start.x,start.y);
-        ctx.lineTo(end.x,end.y);
-        ctx.stroke();
-      });
-
-      [0,7,8,11,12,23,24].forEach((index) => {
-        const p = point(index);
-        if (!p.visible) return;
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,Math.max(4,canvas.width/260),0,Math.PI*2);
-        ctx.fill();
-      });
-
-      const head = point(0);
-      const labelY = Math.max(38, head.y - 42);
-      const fontSize = Math.max(15, canvas.width / 60);
-      const text = `${name} • ${assessment.score}`;
-
-      ctx.font = `600 ${fontSize}px Noto Sans Thai`;
-      const width = ctx.measureText(text).width + 22;
-      const x = Math.min(canvas.width - width/2 - 6, Math.max(width/2 + 6, head.x));
-
-      ctx.fillStyle = 'rgba(12,29,45,.82)';
-      roundedRect(ctx,x-width/2,labelY-25,width,36,10);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text,x,labelY-7);
-    }
-
-    function renderInitialPeople() {
-      const people = registration.mode === 'single'
-        ? [{ fullName:registration.fullName }]
-        : registration.members;
-
-      $('#peopleList').innerHTML = people
-        .map((person,index) => personHtml(index,person.fullName,0,'รอเปิดกล้อง',false))
-        .join('');
-      $('#peopleCount').textContent = `${people.length} คน`;
-    }
-
-    function renderPeople(foundCount) {
-      if (!registration) return;
-
-      const people = registration.mode === 'single'
-        ? [{ fullName:registration.fullName }]
-        : registration.members;
-
-      $('#peopleList').innerHTML = people.map((person,index) => {
-        const stats = personStats[getPersonKey(index)];
-        const score = stats?.count ? Math.round(stats.scoreSum / stats.count) : 0;
-        const found = index < foundCount;
-        const note = found ? (score >= 70 ? 'ท่านั่งดี' : 'ควรปรับท่า') : 'ยังไม่พบในภาพ';
-        return personHtml(index,person.fullName,score,note,found && score < 70);
-      }).join('');
-
-      $('#peopleCount').textContent = `${foundCount} / ${people.length} คน`;
-    }
-
-    function personHtml(index,name,score,note,risk) {
-      return `
-        <div class="person">
-          <div class="avatar">${index + 1}</div>
-          <div>
-            <div class="person-name">${escapeHtml(name)}</div>
-            <div class="person-note">${escapeHtml(note)}</div>
-          </div>
-          <span class="badge ${risk ? 'risk' : ''}">${score || '—'}</span>
-        </div>
-      `;
-    }
-
-    function updateMetrics() {
-      const elapsed = startedAt ? (Date.now() - startedAt) / 1000 : 0;
-      const average = scoreSamples.length
-        ? Math.round(scoreSamples.reduce((sum,value) => sum + value,0) / scoreSamples.length)
-        : 0;
-
-      $('#timer').textContent = formatSeconds(elapsed);
-      $('#goodTime').textContent = formatSeconds(totalGood);
-      $('#riskTime').textContent = formatSeconds(totalRisk);
-      $('#avgScore').textContent = average;
-    }
-
-    function finishSession() {
-      if (!running) return;
-
-      running = false;
-      paused = false;
-      cancelAnimationFrame(animationId);
-      stopTracks();
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      const totalSeconds = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
-      const averageScore = scoreSamples.length
-        ? Math.round(scoreSamples.reduce((sum,value) => sum + value,0) / scoreSamples.length)
-        : 0;
-
-      const results = Object.entries(personStats).map(([personKey,stats]) => ({
-        resultId:createId('RES'),
-        personKey,
-        personName:stats.name,
-        averageScore:stats.count ? Math.round(stats.scoreSum / stats.count) : 0,
-        goodSeconds:Math.round(stats.good),
-        riskSeconds:Math.round(stats.risk),
-        neckCount:stats.neckCount || 0,
-        shoulderCount:stats.shoulderCount || 0,
-        slouchCount:stats.slouchCount || 0,
-        tooCloseCount:stats.tooCloseCount || 0
-      }));
-
-      sendToSheets('finishSession', {
-        sessionId,
-        totalSeconds,
-        goodSeconds:Math.round(totalGood),
-        riskSeconds:Math.round(totalRisk),
-        averageScore,
-        results
-      });
-
-      $('#cameraLabel').textContent = 'จบการใช้งานแล้ว';
-      $('#modelLabel').textContent = 'บันทึกผลไปยัง Google Sheets แล้ว';
-      $('#statusMain').textContent = 'จบและส่งผลเรียบร้อย';
-      $('#statusSub').textContent = 'กดรีเฟรชหน้าเพื่อเริ่มการตรวจครั้งใหม่';
-      $('#cameraEmpty').classList.remove('hidden');
-      $('#cameraEmpty').innerHTML = '<div><div class="big">✅</div><h3>ส่งผลเรียบร้อยแล้ว</h3><p>ข้อมูลถูกส่งไปยัง Google Sheets</p></div>';
-      $('#pauseBtn').disabled = true;
-      $('#switchBtn').disabled = true;
-      $('#finishBtn').disabled = true;
-      $('#startBtn').disabled = true;
-      toast('ส่งผลไปยัง Google Sheets เรียบร้อยแล้ว');
-    }
-
-    function resetSessionState() {
-      scoreSamples = [];
-      personStats = {};
-      riskState = {};
-      totalGood = 0;
-      totalRisk = 0;
-      lastVideoTime = -1;
-      lastMetricsPaint = 0;
-      $('#scoreText').textContent = '0';
-      $('#scoreOrb').style.setProperty('--score','0%');
-      updateMetrics();
-    }
-
-    function sendToSheets(action,data) {
-      if (!endpoint) return false;
-
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = endpoint;
-      form.target = 'gasSink';
-      form.style.display = 'none';
-
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'payload';
-      input.value = JSON.stringify({ action,data });
-
-      form.appendChild(input);
-      document.body.appendChild(form);
-      form.submit();
-      setTimeout(() => form.remove(),1500);
-      return true;
-    }
-
-    function stopTracks() {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach((track) => track.stop());
-        mediaStream = null;
-      }
-      video.srcObject = null;
-    }
-
-    function getPersonName(index) {
-      if (registration.mode === 'single') return registration.fullName;
-      return registration.members[index]?.fullName || `บุคคล ${index + 1}`;
-    }
-
-    function getPersonKey(index) {
-      if (registration.mode === 'single') return registration.userId;
-      return registration.members[index]?.userId || `P${index + 1}`;
-    }
-
-    function midpoint(a,b) {
-      return { x:(a.x+b.x)/2, y:(a.y+b.y)/2 };
-    }
-
-    function roundedRect(context,x,y,width,height,radius) {
-      context.beginPath();
-      if (typeof context.roundRect === 'function') {
-        context.roundRect(x,y,width,height,radius);
-      } else {
-        context.rect(x,y,width,height);
-      }
-    }
-
-    function formatSeconds(seconds) {
-      const safe = Math.max(0,Math.round(seconds || 0));
-      const minutes = String(Math.floor(safe/60)).padStart(2,'0');
-      const remaining = String(safe%60).padStart(2,'0');
-      return `${minutes}:${remaining}`;
-    }
-
-    function createId(prefix) {
-      const random = window.crypto?.randomUUID
-        ? window.crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      return `${prefix}-${random}`;
-    }
-
-    function readableCameraError(error) {
-      const name = error?.name || '';
-      const message = String(error?.message || '');
-      if (name === 'NotAllowedError') return 'ยังไม่ได้อนุญาตใช้กล้อง กรุณากดอนุญาตในเบราว์เซอร์';
-      if (name === 'NotFoundError') return 'ไม่พบกล้องในอุปกรณ์นี้';
-      if (name === 'NotReadableError') return 'กล้องอาจถูกใช้งานโดยโปรแกรมอื่น กรุณาปิดโปรแกรมนั้นก่อน';
-      if (message.includes('โหลด AI ไม่สำเร็จ')) return 'โหลด AI ไม่สำเร็จจากเครือข่ายนี้ กรุณาลองรีเฟรชอีกครั้ง';
-      if (message.includes('Failed to fetch')) return 'โหลด AI ไม่สำเร็จจากเครือข่ายนี้ กรุณาลองรีเฟรชอีกครั้ง';
-      return message || 'ไม่สามารถเปิดกล้องหรือโหลด AI ได้';
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? '').replace(/[&<>'"]/g,(character) => ({
-        '&':'&amp;',
-        '<':'&lt;',
-        '>':'&gt;',
-        "'":'&#39;',
-        '"':'&quot;'
-      })[character]);
-    }
-
-    function toast(message) {
-      const element = $('#toast');
-      element.textContent = message;
-      element.classList.remove('hidden');
-      clearTimeout(element._timer);
-      element._timer = setTimeout(() => element.classList.add('hidden'),4200);
-    }
-
-    function showLoading(message) {
-      $('#loadingText').textContent = message;
-      $('#loading').classList.remove('hidden');
-    }
-
-    function hideLoading() {
-      $('#loading').classList.add('hidden');
-    }
-  </script>
-</body>
-</html>
+    });
+  } catch (error) {
+    console.warn(error);
+  }
+}
+
+
+function openReportScreen() {
+  if (stream) {
+    toast('กรุณากด “สิ้นสุดและบันทึก” ก่อนเปิดรายงาน');
+    return;
+  }
+  const saved = JSON.parse(localStorage.getItem('smartsitUser') || '{}');
+  if (!$('reportUserId').value && (user.userId || saved.userId)) $('reportUserId').value = user.userId || saved.userId;
+  if (!$('reportOrganization').value && (user.organization || saved.organization)) $('reportOrganization').value = user.organization || saved.organization;
+  if (!$('reportClassName').value && (user.className || saved.className)) $('reportClassName').value = user.className || saved.className;
+  if (appMode) $('reportMode').value = appMode;
+  showScreen('reportScreen');
+  if ($('reportUserId').value.trim()) loadReport();
+}
+
+function resetReportFilters() {
+  $('reportMode').value = 'all';
+  $('reportOrganization').value = '';
+  $('reportClassName').value = '';
+  $('reportDateFrom').value = '';
+  $('reportDateTo').value = '';
+}
+
+async function loadReport() {
+  const filters = {
+    userId: $('reportUserId').value.trim(),
+    appMode: $('reportMode').value,
+    organization: $('reportOrganization').value.trim(),
+    className: $('reportClassName').value.trim(),
+    dateFrom: $('reportDateFrom').value,
+    dateTo: $('reportDateTo').value
+  };
+  if (!filters.userId) {
+    toast('กรุณากรอกรหัสผู้ใช้งานหรือรหัสครู');
+    $('reportUserId').focus();
+    return;
+  }
+  if (filters.dateFrom && filters.dateTo && filters.dateFrom > filters.dateTo) {
+    toast('วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด');
+    return;
+  }
+
+  loading(true, 'กำลังโหลดรายงานผล...');
+  try {
+    const data = await serverCall('getReportData', filters);
+    reportRows = data.sessions || [];
+    renderReport(data.summary || {}, reportRows, filters.appMode);
+  } catch (error) {
+    console.error(error);
+    toast('โหลดรายงานไม่สำเร็จ: ' + (error.message || error));
+  } finally {
+    loading(false);
+  }
+}
+
+function renderReport(summary, rows, mode) {
+  $('reportSessions').textContent = Number(summary.sessionCount || 0).toLocaleString('th-TH');
+  $('reportAvgScore').textContent = Number(summary.averageScore || 0).toLocaleString('th-TH');
+  $('reportTotalTime').textContent = formatMinutes(summary.totalSeconds || 0);
+  $('reportGoodRate').textContent = Number(summary.goodRate || 0) + '%';
+  $('reportAttention').textContent = Number(summary.attentionCount || 0).toLocaleString('th-TH');
+  $('reportLatest').textContent = summary.latestSavedAt
+    ? new Date(summary.latestSavedAt).toLocaleDateString('th-TH', {day:'2-digit',month:'short',year:'numeric'})
+    : '–';
+  $('reportGoodLabel').textContent = mode === 'classroom' ? 'สัดส่วนนักเรียนท่าดี' : mode === 'personal' ? 'สัดส่วนเวลาท่าดี' : 'สัดส่วนผลท่าดี';
+  $('reportResultCount').textContent = `พบ ${rows.length.toLocaleString('th-TH')} รายการ`;
+
+  if (!rows.length) {
+    $('reportTableBody').innerHTML = '<tr><td colspan="10" class="empty-report">ไม่พบข้อมูลตามตัวกรองนี้</td></tr>';
+  } else {
+    $('reportTableBody').innerHTML = rows.map(row => {
+      const classroom = String(row.AppMode) === 'classroom';
+      const score = Number(row.Score || 0);
+      const scoreClass = score >= 85 ? 'score-high' : score >= 70 ? 'score-mid' : 'score-low';
+      const subject = classroom
+        ? `${escapeHtml(row.Organization || '–')}<br><span class="note">ผู้ควบคุม ${escapeHtml(row.Name || '–')}</span>`
+        : `${escapeHtml(row.Name || '–')}<br><span class="note">รหัส ${escapeHtml(row.UserID || '–')}</span>`;
+      const context = classroom ? escapeHtml(row.ClassName || '–') : escapeHtml(row.ActivityMode || '–');
+      const good = classroom
+        ? `${Number(row.GoodPersonObservations || 0).toLocaleString('th-TH')} ครั้งตรวจพบ`
+        : formatMinutes(row.GoodSeconds || 0);
+      const bad = classroom
+        ? `${Number(row.BadPersonObservations || 0).toLocaleString('th-TH')} ครั้งตรวจพบ`
+        : formatMinutes(row.BadSeconds || 0);
+      const attention = classroom
+        ? Number(row.BadPersonObservations || 0).toLocaleString('th-TH')
+        : Number(row.AlertCount || 0).toLocaleString('th-TH');
+      const details = classroom
+        ? `พบเฉลี่ย ${Number(row.AverageDetected || 0).toFixed(1)} คน · สูงสุด ${Number(row.MaxDetected || 0)} คน`
+        : escapeHtml(row.MainIssue || 'ไม่พบปัญหาเด่น');
+      return `<tr>
+        <td>${formatDateTime(row.SavedAt)}</td>
+        <td><span class="mode-badge ${classroom ? 'mode-classroom' : 'mode-personal'}">${classroom ? 'ห้องเรียน' : 'ส่วนบุคคล'}</span></td>
+        <td>${subject}</td><td>${context}</td><td>${formatMinutes(row.TotalSeconds || 0)}</td>
+        <td><span class="score-badge ${scoreClass}">${score}</span></td><td>${good}</td><td>${bad}</td><td>${attention}</td><td>${details}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  renderReportCharts(rows, summary, mode);
+}
+
+function renderReportCharts(rows, summary, mode) {
+  const chronological = rows.slice().reverse();
+  const labels = chronological.map(row => new Date(row.SavedAt).toLocaleDateString('th-TH', {day:'2-digit',month:'short'}));
+  const scores = chronological.map(row => Number(row.Score || 0));
+  if (reportScoreChart) reportScoreChart.destroy();
+  reportScoreChart = new Chart($('reportScoreChart'), {
+    type:'line',
+    data:{labels,datasets:[{label:'คะแนน',data:scores,tension:.35,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:100}},plugins:{legend:{display:false}}}
+  });
+
+  let statusLabels, statusData;
+  if (mode === 'personal') {
+    statusLabels = ['เวลาท่าดี','เวลาควรปรับ','ตรวจไม่ชัด'];
+    statusData = [Number(summary.goodUnits || 0),Number(summary.badUnits || 0),Number(summary.unknownUnits || 0)];
+    $('reportStatusTitle').textContent = 'สัดส่วนเวลาท่านั่ง';
+    $('reportStatusDesc').textContent = 'รวมเวลาท่าดี ท่าที่ควรปรับ และช่วงตรวจไม่ชัด';
+  } else if (mode === 'classroom') {
+    statusLabels = ['นักเรียนท่าดี','นักเรียนควรปรับ'];
+    statusData = [Number(summary.goodUnits || 0),Number(summary.badUnits || 0)];
+    $('reportStatusTitle').textContent = 'สัดส่วนผลตรวจในห้องเรียน';
+    $('reportStatusDesc').textContent = 'รวมการตรวจพบของนักเรียนหลายคนตลอดช่วงทดลอง';
+  } else {
+    statusLabels = ['คะแนนตั้งแต่ 75','คะแนนต่ำกว่า 75'];
+    statusData = [rows.filter(row => Number(row.Score || 0) >= 75).length,rows.filter(row => Number(row.Score || 0) < 75).length];
+    $('reportStatusTitle').textContent = 'ระดับผลการตรวจแต่ละครั้ง';
+    $('reportStatusDesc').textContent = 'เปรียบเทียบจำนวนครั้งที่ได้คะแนนตั้งแต่ 75 กับต่ำกว่า 75';
+  }
+  if (reportStatusChart) reportStatusChart.destroy();
+  reportStatusChart = new Chart($('reportStatusChart'), {
+    type:'doughnut',data:{labels:statusLabels,datasets:[{data:statusData}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
+  });
+}
+
+function exportReportCsv() {
+  if (!reportRows.length) { toast('ยังไม่มีข้อมูลสำหรับส่งออก'); return; }
+  const headers = ['วันที่เวลา','โหมด','รหัส','ชื่อ','อายุ','กลุ่มผู้ใช้','กิจกรรม','โรงเรียน/สถานที่','ชั้น/ห้อง','เวลารวม(วินาที)','ท่าดี(วินาที)','ควรปรับ(วินาที)','คะแนน','แจ้งเตือน','ปัญหาหลัก','พบเฉลี่ย(คน)','พบสูงสุด(คน)','ตรวจพบท่าดี','ตรวจพบควรปรับ'];
+  const lines = [headers].concat(reportRows.map(row => [
+    formatDateTime(row.SavedAt),row.AppMode === 'classroom' ? 'ห้องเรียน' : 'ส่วนบุคคล',row.UserID,row.Name,row.Age,row.Role,row.ActivityMode,row.Organization,row.ClassName,row.TotalSeconds,row.GoodSeconds,row.BadSeconds,row.Score,row.AlertCount,row.MainIssue,row.AverageDetected,row.MaxDetected,row.GoodPersonObservations,row.BadPersonObservations
+  ])).map(values => values.map(csvCell).join(','));
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `SmartSit_Report_${$('reportUserId').value.trim()}_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+  let text = String(value == null ? '' : value);
+  if (/^[=+\-@]/.test(text)) text = "'" + text;
+  return '"' + text.replace(/"/g, '""') + '"';
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? '–' : date.toLocaleString('th-TH');
+}
+
+function formatTime(seconds) {
+  const rounded = Math.max(0, Math.round(seconds));
+  return String(Math.floor(rounded / 60)).padStart(2, '0') + ':' + String(rounded % 60).padStart(2, '0');
+}
+
+function formatMinutes(seconds) {
+  return (Number(seconds || 0) / 60).toFixed(1) + ' นาที';
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  })[character]);
+}
+
+window.addEventListener('beforeunload', stopCamera);
+init();
+
+</script></body></html>
