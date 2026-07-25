@@ -370,9 +370,9 @@
         </div>
       </div>
       <div class="header-actions">
-        <span class="version">AI Fixed v1.1</span>
+        <span class="version">พร้อมใช้ v1.2</span>
         <div id="userPill" class="user-pill">ยังไม่ได้ลงทะเบียน</div>
-        <button id="settingsBtn" class="icon-btn" type="button" title="ตั้งค่าการเชื่อมต่อ">⚙️</button>
+        
       </div>
     </header>
 
@@ -449,8 +449,8 @@
     <div class="modal-box small">
       <div class="modal-hero">
         <div style="font-size:34px">🔗</div>
-        <h2>เชื่อมต่อ Google Sheets</h2>
-        <p>วางลิงก์ Apps Script ที่ลงท้ายด้วย /exec เพียงครั้งเดียว</p>
+        <h2>การเชื่อมต่อข้อมูล</h2>
+        <p>ผู้ดูแลระบบกำหนดการเชื่อมต่อไว้แล้ว</p>
       </div>
       <div class="form">
         <div class="field">
@@ -458,7 +458,7 @@
           <input id="endpointInput" inputmode="url" placeholder="https://script.google.com/.../exec">
           <div class="hint">ลิงก์จะถูกจำไว้ในเบราว์เซอร์เครื่องนี้ ไม่ต้องแก้โค้ด</div>
         </div>
-        <div id="endpointNotice" class="notice" style="margin-top:12px">ยังไม่ได้เชื่อมต่อ Google Sheets</div>
+        <div id="endpointNotice" class="notice" style="margin-top:12px">ยังไม่ได้การเชื่อมต่อข้อมูล</div>
         <div class="form-actions">
           <button id="closeSettingsBtn" class="btn btn-soft" type="button">ปิด</button>
           <button id="saveEndpointBtn" class="btn btn-primary" type="button">บันทึกลิงก์</button>
@@ -538,7 +538,7 @@
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
-    const STORAGE_ENDPOINT = 'smartsit_apps_script_url';
+    const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwQAnQVENtlVWX7-XjuS7WzTPnzyjeLWnz--uk4jb4_IDOrlm4ivVwoypOW3piuQZ7bvA/exec';
     const MAX_GROUP_SIZE = 4;
     const ALERT_SECONDS = 5;
     const SAVE_RISK_EVERY_SECONDS = 10;
@@ -574,16 +574,14 @@
     init();
 
     function init() {
-      endpoint = normalizeEndpoint(localStorage.getItem(STORAGE_ENDPOINT) || '');
+      // ผู้ดูแลระบบกำหนดปลายทาง Google Sheets ไว้ในไฟล์แล้ว
+      // ผู้ใช้งานทั่วไปไม่ต้องกรอกลิงก์หรือเห็นหน้าตั้งค่านี้
+      endpoint = normalizeEndpoint(APPS_SCRIPT_ENDPOINT);
       bindEvents();
       setMode('single');
       updateConnectionNotice();
-
-      if (!endpoint) {
-        openConnectionModal(false);
-      } else {
-        $('#registerModal').classList.remove('hidden');
-      }
+      $('#connectionModal').classList.add('hidden');
+      $('#registerModal').classList.remove('hidden');
     }
 
     function bindEvents() {
@@ -591,7 +589,6 @@
         card.addEventListener('click', () => setMode(card.dataset.mode));
       });
 
-      $('#settingsBtn').addEventListener('click', () => openConnectionModal(true));
       $('#saveEndpointBtn').addEventListener('click', saveEndpoint);
       $('#closeSettingsBtn').addEventListener('click', closeConnectionModal);
       $('#addMemberBtn').addEventListener('click', addMember);
@@ -629,7 +626,6 @@
       }
 
       endpoint = value;
-      localStorage.setItem(STORAGE_ENDPOINT, endpoint);
       updateConnectionNotice();
       sendToSheets('ping', { sentAt: new Date().toISOString() });
       $('#connectionModal').classList.add('hidden');
@@ -644,7 +640,7 @@
         notice.textContent = 'เชื่อมต่อแล้ว: ' + compactUrl(endpoint);
       } else {
         notice.className = 'notice';
-        notice.textContent = 'ยังไม่ได้เชื่อมต่อ Google Sheets';
+        notice.textContent = 'ยังไม่ได้การเชื่อมต่อข้อมูล';
       }
     }
 
@@ -708,11 +704,6 @@
     }
 
     function registerUser() {
-      if (!endpoint) {
-        openConnectionModal(false);
-        return;
-      }
-
       const modeCard = $('.mode.active');
       const mode = modeCard ? modeCard.dataset.mode : 'single';
       const userId = $('#userId').value.trim();
@@ -780,27 +771,40 @@
       }
 
       try {
-        showLoading('กำลังโหลด AI และเปิดกล้อง…');
+        // เปิดกล้องก่อน เพื่อให้ผู้ใช้เห็นภาพทันที แม้ไฟล์ AI จะโหลดช้า
+        if (!mediaStream) {
+          showLoading('กำลังเปิดกล้อง…');
+          await openMediaStream();
+          $('#cameraEmpty').classList.add('hidden');
+          $('#cameraLabel').textContent = 'กล้องเปิดแล้ว';
+          $('#modelLabel').textContent = 'กำลังเตรียม AI…';
+          $('#statusMain').textContent = 'กล้องเปิดแล้ว';
+          $('#statusSub').textContent = 'กำลังโหลดระบบตรวจท่านั่ง';
+          hideLoading();
+        }
+
+        showLoading('กำลังโหลด AI ตรวจท่านั่ง…');
         await loadPoseModel();
-        await openMediaStream();
 
-        sessionId = createId('SES');
-        sendToSheets('startSession', {
-          ...registration,
-          sessionId,
-          userAgent: navigator.userAgent
-        });
+        if (!sessionId) {
+          sessionId = createId('SES');
+          sendToSheets('startSession', {
+            ...registration,
+            sessionId,
+            userAgent: navigator.userAgent
+          });
+          resetSessionState();
+          startedAt = Date.now();
+          lastTick = performance.now();
+        }
 
-        resetSessionState();
-        startedAt = Date.now();
-        lastTick = performance.now();
         running = true;
         paused = false;
 
-        $('#cameraEmpty').classList.add('hidden');
         $('#cameraLabel').textContent = 'กำลังตรวจแบบเรียลไทม์';
         $('#modelLabel').textContent = 'AI พร้อมใช้งาน';
         $('#startBtn').disabled = true;
+        $('#startBtn').textContent = 'เปิดกล้อง AR';
         $('#pauseBtn').disabled = false;
         $('#switchBtn').disabled = false;
         $('#finishBtn').disabled = false;
@@ -812,6 +816,18 @@
       } catch (error) {
         hideLoading();
         console.error(error);
+
+        // หาก AI โหลดไม่สำเร็จ ให้คงภาพกล้องไว้และให้ลองโหลด AI ใหม่ได้
+        if (mediaStream) {
+          $('#cameraEmpty').classList.add('hidden');
+          $('#cameraLabel').textContent = 'กล้องเปิดแล้ว';
+          $('#modelLabel').textContent = 'AI ยังไม่พร้อม';
+          $('#statusMain').textContent = 'เปิดกล้องสำเร็จ แต่ AI ยังโหลดไม่สำเร็จ';
+          $('#statusSub').textContent = 'กดปุ่มด้านล่างเพื่อลองโหลด AI อีกครั้ง';
+          $('#startBtn').disabled = false;
+          $('#startBtn').textContent = 'ลองโหลด AI อีกครั้ง';
+        }
+
         toast(readableCameraError(error));
       }
     }
@@ -825,16 +841,16 @@
       // และมี CDN สำรอง หากเครือข่ายบล็อกแหล่งใดแหล่งหนึ่ง
       const sources = [
         {
+          moduleUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs',
+          wasmUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
+        },
+        {
           moduleUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.15/vision_bundle.mjs',
           wasmUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.15/wasm'
         },
         {
           moduleUrl:'https://unpkg.com/@mediapipe/tasks-vision@0.10.15/vision_bundle.mjs',
           wasmUrl:'https://unpkg.com/@mediapipe/tasks-vision@0.10.15/wasm'
-        },
-        {
-          moduleUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs',
-          wasmUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
         }
       ];
 
