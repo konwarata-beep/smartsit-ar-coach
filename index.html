@@ -370,7 +370,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <span class="version">GitHub Edition</span>
+        <span class="version">AI Fixed v1.1</span>
         <div id="userPill" class="user-pill">ยังไม่ได้ลงทะเบียน</div>
         <button id="settingsBtn" class="icon-btn" type="button" title="ตั้งค่าการเชื่อมต่อ">⚙️</button>
       </div>
@@ -455,7 +455,7 @@
       <div class="form">
         <div class="field">
           <label>ลิงก์ Web app ของ Apps Script</label>
-          <input id="endpointInput" inputmode="url" placeholder="https://script.google.com/macros/s/AKfycbxxlfzYOiEmZP7XjSWVhxNH40D4LwbqTf5PnON0rFJon_2UeXOKLyz_6BHook7TnIV7rg/exec">
+          <input id="endpointInput" inputmode="url" placeholder="https://script.google.com/.../exec">
           <div class="hint">ลิงก์จะถูกจำไว้ในเบราว์เซอร์เครื่องนี้ ไม่ต้องแก้โค้ด</div>
         </div>
         <div id="endpointNotice" class="notice" style="margin-top:12px">ยังไม่ได้เชื่อมต่อ Google Sheets</div>
@@ -821,30 +821,73 @@
 
       $('#modelLabel').textContent = 'กำลังโหลด AI…';
 
-      const visionModule = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm');
-      const vision = await visionModule.FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm'
-      );
-
-      const options = {
-        baseOptions: {
-          modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task',
-          delegate:'GPU'
+      // ใช้ไฟล์ vision_bundle.mjs ตามรูปแบบที่ MediaPipe แนะนำ
+      // และมี CDN สำรอง หากเครือข่ายบล็อกแหล่งใดแหล่งหนึ่ง
+      const sources = [
+        {
+          moduleUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.15/vision_bundle.mjs',
+          wasmUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.15/wasm'
         },
-        runningMode:'VIDEO',
-        numPoses: registration.mode === 'group' ? MAX_GROUP_SIZE : 1,
-        minPoseDetectionConfidence:.55,
-        minPosePresenceConfidence:.55,
-        minTrackingConfidence:.5
-      };
+        {
+          moduleUrl:'https://unpkg.com/@mediapipe/tasks-vision@0.10.15/vision_bundle.mjs',
+          wasmUrl:'https://unpkg.com/@mediapipe/tasks-vision@0.10.15/wasm'
+        },
+        {
+          moduleUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs',
+          wasmUrl:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+        }
+      ];
 
-      try {
-        poseLandmarker = await visionModule.PoseLandmarker.createFromOptions(vision, options);
-      } catch (gpuError) {
-        console.warn('GPU unavailable, falling back to CPU', gpuError);
-        delete options.baseOptions.delegate;
-        poseLandmarker = await visionModule.PoseLandmarker.createFromOptions(vision, options);
+      const modelUrls = [
+        'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+        'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task'
+      ];
+
+      let lastError = null;
+
+      for (const source of sources) {
+        try {
+          const visionModule = await import(source.moduleUrl);
+          const vision = await visionModule.FilesetResolver.forVisionTasks(source.wasmUrl);
+
+          for (const modelAssetPath of modelUrls) {
+            const options = {
+              baseOptions: {
+                modelAssetPath,
+                delegate:'GPU'
+              },
+              runningMode:'VIDEO',
+              numPoses: registration.mode === 'group' ? MAX_GROUP_SIZE : 1,
+              minPoseDetectionConfidence:.55,
+              minPosePresenceConfidence:.55,
+              minTrackingConfidence:.5
+            };
+
+            try {
+              poseLandmarker = await visionModule.PoseLandmarker.createFromOptions(vision, options);
+              $('#modelLabel').textContent = 'AI พร้อมใช้งาน';
+              return;
+            } catch (gpuError) {
+              console.warn('GPU unavailable, trying CPU', gpuError);
+              try {
+                delete options.baseOptions.delegate;
+                poseLandmarker = await visionModule.PoseLandmarker.createFromOptions(vision, options);
+                $('#modelLabel').textContent = 'AI พร้อมใช้งาน';
+                return;
+              } catch (cpuError) {
+                lastError = cpuError;
+                console.warn('Model source failed', modelAssetPath, cpuError);
+              }
+            }
+          }
+        } catch (sourceError) {
+          lastError = sourceError;
+          console.warn('MediaPipe CDN failed', source.moduleUrl, sourceError);
+        }
       }
+
+      $('#modelLabel').textContent = 'โหลด AI ไม่สำเร็จ';
+      throw new Error(`โหลด AI ไม่สำเร็จ (${lastError?.message || 'ไม่สามารถเชื่อมต่อไฟล์ AI'})`);
     }
 
     async function openMediaStream() {
@@ -1304,11 +1347,13 @@
 
     function readableCameraError(error) {
       const name = error?.name || '';
+      const message = String(error?.message || '');
       if (name === 'NotAllowedError') return 'ยังไม่ได้อนุญาตใช้กล้อง กรุณากดอนุญาตในเบราว์เซอร์';
       if (name === 'NotFoundError') return 'ไม่พบกล้องในอุปกรณ์นี้';
       if (name === 'NotReadableError') return 'กล้องอาจถูกใช้งานโดยโปรแกรมอื่น กรุณาปิดโปรแกรมนั้นก่อน';
-      if (String(error?.message || '').includes('Failed to fetch')) return 'โหลด AI ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต';
-      return error?.message || 'ไม่สามารถเปิดกล้องหรือโหลด AI ได้';
+      if (message.includes('โหลด AI ไม่สำเร็จ')) return 'โหลด AI ไม่สำเร็จจากเครือข่ายนี้ กรุณาลองรีเฟรชอีกครั้ง';
+      if (message.includes('Failed to fetch')) return 'โหลด AI ไม่สำเร็จจากเครือข่ายนี้ กรุณาลองรีเฟรชอีกครั้ง';
+      return message || 'ไม่สามารถเปิดกล้องหรือโหลด AI ได้';
     }
 
     function escapeHtml(value) {
