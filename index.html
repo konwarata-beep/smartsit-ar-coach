@@ -216,9 +216,9 @@ body{background:linear-gradient(180deg,#edf6ff 0,#f8fbff 250px,#f3f7fb 100%)}
 </div>
 </section>
 <section class="screen" id="reportScreen">
-<div class="friendly-hero compact-hero report-hero"><div><span class="eyebrow">MY RESULTS</span><h2>ผลย้อนหลัง</h2><p>ค้นหาด้วยรหัสเดียวกับตอนเริ่มตรวจ</p></div><div class="actions"><button class="btn btn-light" id="printReportBtn" type="button">พิมพ์</button><button class="btn btn-primary" id="exportReportBtn" type="button">CSV</button></div></div>
+<div class="friendly-hero compact-hero report-hero"><div><span class="eyebrow">ALL RESULTS</span><h2>ผลย้อนหลัง</h2><p>แสดงผลรวมทุกคน หรือกรอกรหัสเพื่อค้นหาเฉพาะบุคคล</p></div><div class="actions"><button class="btn btn-light" id="printReportBtn" type="button">พิมพ์</button><button class="btn btn-primary" id="exportReportBtn" type="button">CSV</button></div></div>
 <div class="card report-filter friendly-filter">
-<div class="report-search"><div class="field"><label>รหัสผู้ใช้/รหัสการทดลอง *</label><input id="reportUserId" placeholder="กรอกรหัสของคุณ"/></div><button class="btn btn-primary" id="loadReportBtn" type="button">ดูผล</button></div>
+<div class="report-search"><div class="field"><label>รหัสผู้ใช้/รหัสการทดลอง <small>(ไม่กรอกจะแสดงทั้งหมด)</small></label><input id="reportUserId" placeholder="เว้นว่างเพื่อดูข้อมูลรวมทุกคน"/></div><button class="btn btn-primary" id="loadReportBtn" type="button">ค้นหา</button></div>
 <details class="more-options report-options"><summary><span>ตัวกรองเพิ่มเติม</span><small>โหมด สถานที่ ห้อง และวันที่</small></summary><div class="filter-grid"><div class="field"><label>โหมด</label><select id="reportMode"><option value="all">ทั้งหมด</option><option value="personal">ส่วนบุคคล</option><option value="classroom">ห้องเรียน</option></select></div><div class="field"><label>โรงเรียน/หน่วยงาน</label><input id="reportOrg" placeholder="ไม่กรอกก็ได้"/></div><div class="field"><label>ชั้น/ห้อง</label><input id="reportClass" placeholder="ไม่กรอกก็ได้"/></div><div class="field"><label>ตั้งแต่วันที่</label><input id="reportFrom" type="date"/></div><div class="field"><label>ถึงวันที่</label><input id="reportTo" type="date"/></div><div class="actions"><button class="btn btn-light" id="resetReportBtn" type="button">ล้างตัวกรอง</button></div></div></details>
 </div>
 <div class="report-kpis friendly-kpis"><div class="card kpi"><b id="kpiSessions">0</b><span>ครั้ง</span></div><div class="card kpi"><b id="kpiScore">0</b><span>คะแนนเฉลี่ย</span></div><div class="card kpi"><b id="kpiTotal">0 นาที</b><span>เวลารวม</span></div><div class="card kpi"><b id="kpiAlerts">0</b><span>แจ้งเตือน</span></div><div class="card kpi secondary-kpi"><b id="kpiGood">0 นาที</b><span>ท่าดี</span></div><div class="card kpi secondary-kpi"><b id="kpiBad">0 นาที</b><span>ควรปรับ</span></div><div class="card kpi secondary-kpi"><b id="kpiUnknown">0 นาที</b><span>ไม่ชัด</span></div></div>
@@ -244,7 +244,7 @@ body{background:linear-gradient(180deg,#edf6ff 0,#f8fbff 250px,#f3f7fb 100%)}
    เปลี่ยนข้อความด้านล่างเป็น URL เว็บแอป Apps Script ของคุณที่ลงท้ายด้วย /exec
    ผู้ใช้งานทั่วไปจะไม่ต้องกรอก URL นี้
 ============================================================================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbHCr5jcvfC33umyvrUKt4lN9OshsI5QjIaSPL7VIv7Ne4Tc1UJ9SWbmVntyXGF12rkg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzGj-k15YiiPn3tOWi1SDpp6Oe5Wi0es90c-gyR2PcsqDaKCsGTmwa0nPpBAhXK3QkmtQ/exec';
 
 const $ = id => document.getElementById(id);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
@@ -345,7 +345,13 @@ async function checkBackendConnection({silent=true}={}){
 }
 
 function showScreen(id){if(id!=='monitorScreen'&&stream&&sessionState!=='finished'){showToast('กรุณาจบการตรวจหรือหยุดกล้องก่อนเปลี่ยนหน้า');return false;}if(id!=='settingsScreen')stopTestCamera();$$('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');$$('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===id));window.scrollTo(0,0);return true;}
-$$('[data-nav]').forEach(btn=>btn.addEventListener('click',()=>showScreen(btn.dataset.nav)));
+$$('[data-nav]').forEach(btn=>btn.addEventListener('click',()=>{
+  const target=btn.dataset.nav;
+  if(!showScreen(target))return;
+  if(target==='reportScreen'){
+    loadReport();
+  }
+}));
 $('openSettingsBtn').addEventListener('click',()=>showScreen('settingsScreen'));
 $('backendState').addEventListener('click',()=>checkBackendConnection({silent:false}));
 
@@ -519,11 +525,47 @@ function renderSummary(payload,coverage,ranking){
 }
 $('downloadFallbackBtn').addEventListener('click',()=>{if(pendingPayload)downloadCsv([pendingPayload],'smartsit_'+pendingPayload.sessionId+'.csv')});
 $('restartBtn').addEventListener('click',()=>{pendingPayload=null;baseline=null;showScreen('setupScreen')});
-$('summaryReportBtn').addEventListener('click',()=>{$('reportUserId').value=userData.userId||'';showScreen('reportScreen');loadReport()});
+$('summaryReportBtn').addEventListener('click',()=>{$('reportUserId').value='';showScreen('reportScreen');loadReport()});
 
-async function loadReport(){const userId=$('reportUserId').value.trim();if(!userId){showToast('กรุณากรอกรหัสผู้ใช้หรือรหัสการทดลอง');return}setLoading(true,'กำลังอ่านรายงานจาก Google Sheets...',30);try{await ensureChartOnly();const data=await serverCall('getReportData',{userId,appMode:$('reportMode').value,organization:$('reportOrg').value.trim(),className:$('reportClass').value.trim(),dateFrom:$('reportFrom').value,dateTo:$('reportTo').value});reportRows=data.sessions||[];renderReport(data.summary||{},reportRows);setLoading(false)}catch(error){setLoading(false);reportRows=[];$('reportBody').innerHTML=`<tr><td colspan="13" class="empty-state">อ่านข้อมูลไม่สำเร็จ: ${escapeHtml(error.message)}</td></tr>`;showToast('อ่านรายงานไม่สำเร็จ: '+error.message,7000)}}
+async function loadReport(){
+  const userId=$('reportUserId').value.trim();
+  $('reportCount').textContent='กำลังอ่านข้อมูลจาก Google Sheets...';
+  setLoading(true,'กำลังอ่านรายงานจาก Google Sheets...',35);
+  try{
+    const data=await serverCall('getReportData',{
+      userId,
+      appMode:$('reportMode').value,
+      organization:$('reportOrg').value.trim(),
+      className:$('reportClass').value.trim(),
+      dateFrom:$('reportFrom').value,
+      dateTo:$('reportTo').value
+    });
+    reportRows=Array.isArray(data?.sessions)?data.sessions:[];
+    renderReport(data?.summary||{},reportRows);
+    setLoading(false);
+    if(!reportRows.length&&userId){
+      showToast(`ไม่พบผลของรหัส “${userId}” กรุณาตรวจว่าตรงกับคอลัมน์ UserID ในชีต Sessions`,7000);
+    }else if(!reportRows.length){
+      showToast('ยังไม่มีข้อมูลในชีต Sessions',5000);
+    }
+    try{
+      await ensureChartOnly();
+      renderReportCharts(data?.summary||{},reportRows);
+    }catch(chartError){
+      console.warn('Chart.js unavailable; report data is still displayed',chartError);
+      showToast('แสดงข้อมูลย้อนหลังแล้ว แต่กราฟโหลดไม่สำเร็จ',5000);
+    }
+  }catch(error){
+    setLoading(false);
+    reportRows=[];
+    renderReport({},[]);
+    $('reportCount').textContent='เชื่อมต่อเพื่ออ่านข้อมูลไม่สำเร็จ';
+    $('reportBody').innerHTML=`<tr><td colspan="13" class="empty-state">อ่านข้อมูลไม่สำเร็จ: ${escapeHtml(error.message)}</td></tr>`;
+    showToast('อ่านรายงานไม่สำเร็จ: '+error.message,7000);
+  }
+}
 async function ensureChartOnly(){if(!window.Chart)await loadScriptFallback(['https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js','https://unpkg.com/chart.js@4.4.7/dist/chart.umd.min.js'],'Chart.js');}
-$('loadReportBtn').addEventListener('click',loadReport);$('resetReportBtn').addEventListener('click',()=>{['reportUserId','reportOrg','reportClass','reportFrom','reportTo'].forEach(id=>$(id).value='');$('reportMode').value='all';reportRows=[];renderReport({},[])});$('printReportBtn').addEventListener('click',()=>window.print());$('exportReportBtn').addEventListener('click',()=>{if(!reportRows.length){showToast('ยังไม่มีข้อมูลสำหรับส่งออก');return}downloadCsv(reportRows,'SmartSit_Report_'+$('reportUserId').value.trim()+'.csv')});
+$('loadReportBtn').addEventListener('click',loadReport);$('reportUserId').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();loadReport()}});$('resetReportBtn').addEventListener('click',()=>{['reportUserId','reportOrg','reportClass','reportFrom','reportTo'].forEach(id=>$(id).value='');$('reportMode').value='all';loadReport()});$('printReportBtn').addEventListener('click',()=>window.print());$('exportReportBtn').addEventListener('click',()=>{if(!reportRows.length){showToast('ยังไม่มีข้อมูลสำหรับส่งออก');return}downloadCsv(reportRows,'SmartSit_Report_'+($('reportUserId').value.trim()||'ALL')+'.csv')});
 function renderReport(summary={},rows=[]){$('kpiSessions').textContent=summary.sessionCount||0;$('kpiScore').textContent=summary.averageScore||0;$('kpiTotal').textContent=formatMinutes(summary.totalSeconds);$('kpiGood').textContent=formatMinutes(summary.goodSeconds);$('kpiBad').textContent=formatMinutes(summary.badSeconds);$('kpiUnknown').textContent=formatMinutes(summary.unknownSeconds);$('kpiAlerts').textContent=summary.alertCount||0;$('frequentIssueText').textContent='พบบ่อย: '+(summary.frequentIssue||'ไม่พบข้อมูล');$('reportCount').textContent=`พบ ${rows.length} รายการ`;$('reportBody').innerHTML=rows.length?rows.map(row=>`<tr><td>${thaiDate(row.StartedAt||row.SavedAt)}</td><td>${escapeHtml(row.SessionID)}</td><td>${row.AppMode==='classroom'?'ห้องเรียน':'ส่วนบุคคล'}</td><td>${escapeHtml(row.Name||row.Organization||'–')}</td><td>${escapeHtml(row.ActivityMode||row.ClassName||'–')}</td><td>${formatTime(row.TotalSeconds)}</td><td><span class="score-tag ${Number(row.Score)>=85?'score-high':Number(row.Score)>=70?'score-mid':'score-low'}">${row.Score}</span></td><td>${formatTime(row.GoodSeconds)}</td><td>${formatTime(row.BadSeconds)}</td><td>${formatTime(row.UnknownSeconds)}</td><td>${row.AlertCount||0}</td><td>${escapeHtml(row.MainIssue||'–')}</td><td><button class="btn btn-sm btn-soft" onclick="openSessionDetail('${escapeHtml(row.SessionID)}')">ดูรายละเอียด</button></td></tr>`).join(''):'<tr><td colspan="13" class="empty-state">ไม่พบข้อมูลตามตัวกรอง</td></tr>';renderReportCharts(summary,rows);}
 function renderReportCharts(summary,rows){if(!window.Chart)return;if(scoreChart)scoreChart.destroy();if(issueChart)issueChart.destroy();const ordered=[...rows].sort((a,b)=>new Date(a.StartedAt)-new Date(b.StartedAt));scoreChart=new Chart($('scoreChart'),{type:'line',data:{labels:ordered.map(r=>new Date(r.StartedAt||r.SavedAt).toLocaleDateString('th-TH')),datasets:[{label:'คะแนน',data:ordered.map(r=>Number(r.Score||0)),tension:.3,fill:false,borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:100}}}});const it=summary.issueTotals||{};issueChart=new Chart($('issueChart'),{type:'bar',data:{labels:['คอ/ศีรษะ','หลัง/ลำตัว','ไหล่','ศอก','เข่า','ระยะ'],datasets:[{label:'จำนวนครั้ง',data:[it.forwardHead||0,it.slouch||0,it.shoulderTilt||0,it.elbowAngle||0,it.kneeAngle||0,it.screenDistance||0]}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});}
 async function openSessionDetail(id){$('detailModal').classList.add('open');$('modalSessionId').textContent=id;$('modalBody').innerHTML='<div class="empty-state">กำลังโหลดรายละเอียด...</div>';try{const data=await serverCall('getSessionDetail',id);const s=data.session||{},events=data.events||[];$('modalBody').innerHTML=`<div class="detail-grid">${[['ผู้ใช้',s.Name],['รหัสผู้ใช้',s.UserID],['โหมด',s.AppMode==='classroom'?'ห้องเรียน':'ส่วนบุคคล'],['เริ่ม',thaiDate(s.StartedAt)],['สิ้นสุด',thaiDate(s.EndedAt)],['คะแนน',s.Score],['เวลารวม',formatTime(s.TotalSeconds)],['ท่าดี',formatTime(s.GoodSeconds)],['ควรปรับ',formatTime(s.BadSeconds)],['ไม่ชัด',formatTime(s.UnknownSeconds)],['Alert',s.AlertCount],['ปัญหาหลัก',s.MainIssue],['คำแนะนำ',s.ImprovementAdvice],['อุปกรณ์',s.DeviceType],['มุมกล้อง',s.CameraAngle]].map(([a,b])=>`<div class="detail-item"><span>${a}</span><b>${escapeHtml(b||'–')}</b></div>`).join('')}</div><h3>เหตุการณ์ที่บันทึก</h3><div class="event-list">${events.length?events.map(e=>`<div class="event-row"><span>${thaiDate(e.EventTime)}</span><b>${escapeHtml(e.EventType)}</b><span>${escapeHtml(e.Message||e.Issue)}</span><span class="badge ${e.Severity==='critical'?'bad':e.Severity==='warning'?'warn':'gray'}">${escapeHtml(e.Severity)}</span></div>`).join(''):'<div class="empty-state">ไม่มี Event ที่บันทึก</div>'}</div>`}catch(e){$('modalBody').innerHTML=`<div class="empty-state">โหลดรายละเอียดไม่สำเร็จ: ${escapeHtml(e.message)}</div>`}}
@@ -536,7 +578,7 @@ $('testCameraBtn').addEventListener('click',openTestCamera);$('closeTestCameraBt
 async function checkTestReadiness(){if(!testStream){showToast('กรุณาเปิดกล้องทดสอบก่อน');return}setLoading(true,'กำลังตรวจแสงและจุดร่างกาย...',35);try{await ensureLibraries();const video=$('testVideo');luminanceCanvas.width=64;luminanceCanvas.height=48;const c=luminanceCanvas.getContext('2d',{willReadFrequently:true});c.drawImage(video,0,0,64,48);const d=c.getImageData(0,0,64,48).data;let sum=0;for(let i=0;i<d.length;i+=16)sum+=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];const bright=sum/(d.length/16);const poses=await detector.estimatePoses(video,{maxPoses:1,flipHorizontal:false});const pose=poses[0],vis=pose?evaluateVisibility(pose,$('setAngle').value):null;$('setBrightness').textContent=bright<45?'แสงน้อย':bright>235?'แสงจ้าเกินไป':'แสงเหมาะสม';$('setLandmarks').textContent=vis?.valid?`ตรวจได้ ${Math.round(vis.confidence*100)}%`:'ยังเห็นจุดไม่ครบ';const ready=bright>=45&&bright<=235&&vis?.valid;$('setOverall').textContent=ready?'พร้อมตรวจ':'ควรปรับกล้อง/แสง';$('testMessage').textContent=ready?'พร้อมตรวจท่านั่ง':'กรุณาปรับแสง ระยะ หรือมุมกล้อง';setLoading(false)}catch(e){setLoading(false);showToast('ตรวจความพร้อมไม่สำเร็จ: '+e.message,7000)}}
 $('checkReadyBtn').addEventListener('click',checkTestReadiness);
 
-async function init(){applySavedUser();loadLocalSettings();$('adminWarning').classList.toggle('show',!isApiConfigured()&&!(window.google&&google.script&&google.script.run));if(isApiConfigured()||window.google?.script?.run){checkBackendConnection({silent:true});serverCall('getSettings').then(s=>serverSettings={...serverSettings,...s}).catch(e=>console.warn(e))}else setBackendState('bad','ยังไม่ได้ตั้งค่า URL ของ Apps Script');const pending=JSON.parse(localStorage.getItem('smartsitPending')||'null');if(pending?.payload)showToast('พบผลที่ยังบันทึกไม่สำเร็จจากครั้งก่อน สามารถตรวจใหม่หรือเปิดหน้าสรุปภายหลังได้',7000);$('reportUserId').value=JSON.parse(localStorage.getItem('smartsitUser')||'{}').userId||'';}
+async function init(){applySavedUser();loadLocalSettings();$('adminWarning').classList.toggle('show',!isApiConfigured()&&!(window.google&&google.script&&google.script.run));if(isApiConfigured()||window.google?.script?.run){checkBackendConnection({silent:true});serverCall('getSettings').then(s=>serverSettings={...serverSettings,...s}).catch(e=>console.warn(e))}else setBackendState('bad','ยังไม่ได้ตั้งค่า URL ของ Apps Script');const pending=JSON.parse(localStorage.getItem('smartsitPending')||'null');if(pending?.payload)showToast('พบผลที่ยังบันทึกไม่สำเร็จจากครั้งก่อน สามารถตรวจใหม่หรือเปิดหน้าสรุปภายหลังได้',7000);$('reportUserId').value='';}
 window.addEventListener('beforeunload',()=>{stopMainCamera(false);stopTestCamera()});window.addEventListener('pagehide',()=>{stopMainCamera(false);stopTestCamera()});
 init();
 </script>
