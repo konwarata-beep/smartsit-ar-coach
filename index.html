@@ -271,7 +271,10 @@ let serverSettings={WARNING_SECONDS:5,SERIOUS_SECONDS:15,CRITICAL_SECONDS:30,ALE
 function resetStats(){return{totalSeconds:0,goodSeconds:0,badSeconds:0,unknownSeconds:0,alertCount:0,eyeBreakCount:0,postureBreakCount:0,stretchBreakCount:0,issueCounts:{forwardHead:0,headTilt:0,slouch:0,shoulderTilt:0,elbowAngle:0,kneeAngle:0,upperArm:0,screenDistance:0},detectedFrames:0,personFrames:0,goodPersonFrames:0,badPersonFrames:0,maxDetected:0,lastEyeBreak:0,lastPostureBreak:0,lastStretchBreak:0};}
 function resetTrackers(){issueTrackers={};Object.keys(ISSUE_META).forEach(key=>issueTrackers[key]={active:false,activeSince:0,lastCountAt:0,lastAlertAt:0});}
 
-function isApiConfigured(){return APPS_SCRIPT_URL.startsWith('https://script.google.com/macros/s/')&&APPS_SCRIPT_URL.endsWith('https://script.google.com/macros/s/AKfycbyrpO0Rxvgg-Hx6ltdbup3LwBckX34I7HvcIuxNT4vG7E_K8Yheb_VQkHeciyYhZeMGOw/exec');}
+function isApiConfigured(){
+  const url=String(APPS_SCRIPT_URL||'').trim();
+  return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/.test(url);
+}
 function showToast(message,duration=4500){const t=$('toast');t.textContent=message;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),duration);}
 function setLoading(show,text='กำลังเตรียมระบบ...',progress=15,sub=''){const el=$('loading');$('loadingText').textContent=text;$('loadingBar').style.width=progress+'%';$('loadingSub').textContent=sub;el.classList.toggle('show',show);}
 function escapeHtml(value){return String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));}
