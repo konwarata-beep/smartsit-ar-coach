@@ -54,6 +54,37 @@ body{background:linear-gradient(180deg,#edf6ff 0,#f8fbff 250px,#f3f7fb 100%)}
 .angle-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.angle-option{position:relative;display:flex;align-items:center;gap:9px;padding:11px;border:2px solid #d7e5f3;border-radius:14px;background:#fff;cursor:pointer}.angle-option input{position:absolute;opacity:0}.angle-option.active{border-color:var(--primary);background:#f0f7ff;box-shadow:0 0 0 3px #0b63ce12}.angle-option .angle-icon{font-size:23px}.angle-option b{display:block;font-size:13px}.angle-option small{display:block;color:var(--muted);font-size:10px;margin-top:1px}
 .backend-state{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)}.backend-dot{width:9px;height:9px;border-radius:50%;background:#9aa8b6}.backend-state.ok .backend-dot{background:#17855b}.backend-state.bad .backend-dot{background:#c53a45}
 @media(max-width:650px){.angle-options{grid-template-columns:1fr}.angle-option{padding:10px 12px}.angle-picker-head{flex-direction:column}.setup-footer{align-items:stretch}.setup-footer .btn{width:100%}}
+
+/* ===== Responsive App Navigation + Sheet Connection 3.1 ===== */
+.nav button{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.nav-icon{font-size:15px;line-height:1}.nav-label{white-space:nowrap}
+.friendly-footer{display:flex;flex-direction:column;align-items:stretch}
+.setup-action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(100%,440px);margin-left:auto}
+.setup-action-row .btn{width:100%;min-width:0}
+.backend-state{width:100%;min-height:38px;justify-content:center;margin-top:10px;padding:8px 11px;border:1px solid #dce8f3;border-radius:12px;background:#f7fafe;text-align:center;cursor:pointer}
+.backend-dot{display:block;flex:0 0 9px;box-shadow:0 0 0 4px #9aa8b61c}
+.backend-state.checking .backend-dot{background:#8798a9;animation:backendPulse 1.15s ease-in-out infinite}
+.backend-state.ok{color:#126a4b;background:#effaf5;border-color:#caecdf}.backend-state.ok .backend-dot{box-shadow:0 0 0 4px #17855b1c}
+.backend-state.bad{color:#a72f3a;background:#fff3f4;border-color:#f1d4d7}.backend-state.bad .backend-dot{box-shadow:0 0 0 4px #c53a451c}
+@keyframes backendPulse{0%,100%{opacity:.35;transform:scale(.82)}50%{opacity:1;transform:scale(1.15)}}
+
+@media(max-width:820px){
+  body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  .app{padding-bottom:24px}
+  .header{position:sticky;top:0;z-index:60}
+  .header-inner{display:flex!important;align-items:center!important}
+  .brand{min-width:0;flex:1}.brand h1{font-size:17px;white-space:nowrap}.brand p{display:block;font-size:10px}
+  .nav{position:fixed!important;top:auto!important;left:0!important;right:0!important;bottom:0!important;z-index:100!important;display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:4px!important;min-height:64px;padding:7px max(8px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))!important;background:rgba(255,255,255,.97)!important;border-top:1px solid var(--line)!important;box-shadow:0 -9px 28px rgba(23,60,96,.14)!important;backdrop-filter:blur(16px)}
+  .nav button{font-size:11px!important;display:flex!important;flex-direction:column!important;gap:3px!important;min-height:48px;padding:5px 4px!important;border-radius:12px!important}
+  .nav button::first-letter{font-size:inherit!important}
+  .nav-icon{font-size:20px;line-height:1}.nav-label{display:block;font-size:10px;line-height:1.15}
+  .toast{bottom:calc(78px + env(safe-area-inset-bottom))}
+}
+@media(max-width:620px){
+  .setup-action-row{width:100%;grid-template-columns:1fr 1fr;gap:8px}
+  .setup-action-row .btn{min-height:48px;padding:10px 6px;font-size:13px}
+  .backend-state{order:2;margin-top:9px;font-size:10.5px;line-height:1.4}
+}
 </style>
 </head>
 <body>
@@ -64,11 +95,11 @@ body{background:linear-gradient(180deg,#edf6ff 0,#f8fbff 250px,#f3f7fb 100%)}
 <header class="header">
 <div class="header-inner">
 <div class="brand"><div class="logo">🪑</div><div><h1>SmartSit AR Coach</h1><p>ผู้ช่วยดูแลท่านั่งด้วย AI</p></div></div>
-<nav class="nav">
-<button class="active" data-nav="setupScreen">📷 เริ่ม</button>
-<button data-nav="postureScreen">🧘 ท่านั่ง</button>
-<button data-nav="reportScreen">📊 ผล</button>
-<button data-nav="settingsScreen">⚙️ ตั้งค่า</button>
+<nav class="nav" aria-label="เมนูหลัก">
+<button class="active" data-nav="setupScreen"><span class="nav-icon">📷</span><span class="nav-label">เริ่ม</span></button>
+<button data-nav="postureScreen"><span class="nav-icon">🧘</span><span class="nav-label">ท่านั่ง</span></button>
+<button data-nav="reportScreen"><span class="nav-icon">📊</span><span class="nav-label">ผล</span></button>
+<button data-nav="settingsScreen"><span class="nav-icon">⚙️</span><span class="nav-label">ตั้งค่า</span></button>
 </nav>
 <div class="privacy-pill">🔒 ไม่บันทึกภาพหรือวิดีโอ</div>
 </div>
@@ -116,8 +147,11 @@ body{background:linear-gradient(180deg,#edf6ff 0,#f8fbff 250px,#f3f7fb 100%)}
 </details>
 <label class="consent friendly-consent"><input id="consent" required="" type="checkbox"/><span><b>ยินยอมใช้กล้อง</b><small>ประมวลผลบนอุปกรณ์ ไม่บันทึกภาพหรือวิดีโอ</small></span></label>
 <div class="setup-footer friendly-footer">
-<div class="backend-state" id="backendState"><span class="backend-dot"></span><span id="backendStateText">กำลังตรวจการเชื่อมต่อชีต</span></div><button class="btn btn-light" id="openSettingsBtn" type="button">ทดสอบอุปกรณ์</button>
+<div class="setup-action-row">
+<button class="btn btn-light" id="openSettingsBtn" type="button">ทดสอบอุปกรณ์</button>
 <button class="btn btn-primary btn-start" id="startCameraBtn" type="button">เปิดกล้อง <span>→</span></button>
+</div>
+<div class="backend-state checking" id="backendState" role="status" aria-live="polite"><span class="backend-dot"></span><span id="backendStateText">กำลังตรวจการเชื่อมต่อ Google Sheets...</span></div>
 </div>
 <p class="medical-note">เป็นคำแนะนำด้านพฤติกรรม ไม่ใช่เครื่องมือวินิจฉัยทางการแพทย์</p>
 </form>
@@ -210,11 +244,11 @@ body{background:linear-gradient(180deg,#edf6ff 0,#f8fbff 250px,#f3f7fb 100%)}
    เปลี่ยนข้อความด้านล่างเป็น URL เว็บแอป Apps Script ของคุณที่ลงท้ายด้วย /exec
    ผู้ใช้งานทั่วไปจะไม่ต้องกรอก URL นี้
 ============================================================================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrpO0Rxvgg-Hx6ltdbup3LwBckX34I7HvcIuxNT4vG7E_K8Yheb_VQkHeciyYhZeMGOw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFaxb7gkkx0g7rkmxsiFR7rNKp0u3ex62DC11HNumt_1Nn9eZoo891_ujd7zgKC8J9Tw/exec';
 
 const $ = id => document.getElementById(id);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
-const APP_VERSION = '3.0.0-full-angle';
+const APP_VERSION = '3.1.0-responsive';
 const MAX_CLASSROOM_POSES = 6;
 
 const DEFAULT_SETTINGS = {
@@ -282,9 +316,38 @@ function serverCall(name,...args){
 }
 function jsonpCall(action,data={},timeout=30000){return new Promise((resolve,reject)=>{const cb='__smartsit_cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);const script=document.createElement('script');const timer=setTimeout(()=>cleanup(new Error('ติดต่อ Google Apps Script ไม่สำเร็จหรือใช้เวลานานเกินไป')),timeout);function cleanup(error,result){clearTimeout(timer);delete window[cb];script.remove();error?reject(error):resolve(result);}window[cb]=response=>{if(!response||response.ok===false)cleanup(new Error(response?.error||'Backend ตอบกลับไม่สำเร็จ'));else cleanup(null,response.data);};const params=new URLSearchParams({action,callback:cb,t:Date.now(),data:JSON.stringify(data)});script.src=APPS_SCRIPT_URL+'?'+params.toString();script.onerror=()=>cleanup(new Error('โหลดคำตอบจาก Apps Script ไม่สำเร็จ'));document.head.appendChild(script);});}
 
+function setBackendState(state,text){
+  const box=$('backendState'),label=$('backendStateText');
+  if(!box||!label)return;
+  box.classList.remove('checking','ok','bad');
+  box.classList.add(state);
+  label.textContent=text;
+  box.title=text;
+}
+async function checkBackendConnection({silent=true}={}){
+  if(!isApiConfigured()&&!(window.google&&google.script&&google.script.run)){
+    setBackendState('bad','ยังไม่ได้ตั้งค่า URL ของ Apps Script');
+    return false;
+  }
+  setBackendState('checking','กำลังตรวจการเชื่อมต่อ Google Sheets...');
+  try{
+    const result=await serverCall('testConnection');
+    if(!result?.connected)throw new Error('Backend ยังไม่เชื่อม Google Sheets');
+    const sheetName=result.spreadsheetName?` · ${result.spreadsheetName}`:'';
+    setBackendState('ok','เชื่อม Google Sheets แล้ว'+sheetName);
+    return true;
+  }catch(error){
+    const message=error?.message||String(error);
+    setBackendState('bad','เชื่อม Google Sheets ไม่สำเร็จ · '+message);
+    if(!silent)showToast('ตรวจการเชื่อมต่อไม่สำเร็จ: '+message,8000);
+    return false;
+  }
+}
+
 function showScreen(id){if(id!=='monitorScreen'&&stream&&sessionState!=='finished'){showToast('กรุณาจบการตรวจหรือหยุดกล้องก่อนเปลี่ยนหน้า');return false;}if(id!=='settingsScreen')stopTestCamera();$$('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');$$('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===id));window.scrollTo(0,0);return true;}
 $$('[data-nav]').forEach(btn=>btn.addEventListener('click',()=>showScreen(btn.dataset.nav)));
 $('openSettingsBtn').addEventListener('click',()=>showScreen('settingsScreen'));
+$('backendState').addEventListener('click',()=>checkBackendConnection({silent:false}));
 
 function selectMode(mode){appMode=mode;$$('.mode-card').forEach(c=>c.classList.toggle('active',c.dataset.mode===mode));document.querySelector(`input[name="appMode"][value="${mode}"]`).checked=true;$$('.personal-only').forEach(el=>el.classList.toggle('hidden',mode!=='personal'));$$('.classroom-only').forEach(el=>el.classList.toggle('hidden',mode!=='classroom'));$('nameLabel').textContent=mode==='personal'?'ชื่อหรือชื่อเล่น *':'ชื่อครูหรือผู้ควบคุม *';$('userIdLabel').textContent=mode==='personal'?'รหัสผู้ใช้ *':'รหัสการทดลอง/รหัสครู *';$('organization').required=mode==='classroom';$('className').required=mode==='classroom';if(mode==='classroom')$('cameraFacing').value='environment';}
 $$('.mode-card').forEach(card=>card.addEventListener('click',()=>selectMode(card.dataset.mode)));
@@ -422,7 +485,7 @@ $('testSoundBtn').addEventListener('click',()=>{localSettings.soundEnabled=$('se
 async function finishSession(){if(!startedAt){showToast('ยังไม่ได้เริ่มตรวจ');return}sessionState='finished';stopMainCamera(false);const endedAt=new Date();const detected=stats.goodSeconds+stats.badSeconds;const coverage=detected/Math.max(1,stats.totalSeconds);const score=appMode==='classroom'?(stats.personFrames?Math.round(stats.goodPersonFrames/stats.personFrames*100):0):Math.round(stats.goodSeconds/Math.max(1,detected)*100);const ranking=Object.entries(stats.issueCounts).sort((a,b)=>b[1]-a[1]);const mainKey=ranking[0]?.[1]>0?ranking[0][0]:'';const mainIssue=mainKey?ISSUE_META[mainKey].label:'ไม่พบปัญหาเด่น';const advice=mainKey?ISSUE_META[mainKey].advice:'รักษาท่านั่งที่สมดุลและเปลี่ยนอิริยาบถเป็นระยะ';pendingPayload={sessionId,appMode,userId:userData.userId,name:userData.name,age:userData.age,role:userData.role,activityMode:userData.activityMode,organization:userData.organization,className:userData.className,deviceType:userData.deviceType,cameraType:userData.cameraType,cameraAngle:angleLabel(userData.cameraAngle),totalSeconds:Math.round(stats.totalSeconds),goodSeconds:Math.round(stats.goodSeconds),badSeconds:Math.round(stats.badSeconds),unknownSeconds:Math.round(stats.unknownSeconds),score,alertCount:stats.alertCount,mainIssue,forwardHeadCount:stats.issueCounts.forwardHead,slouchCount:stats.issueCounts.slouch,shoulderTiltCount:stats.issueCounts.shoulderTilt,elbowAngleIssueCount:stats.issueCounts.elbowAngle,kneeAngleIssueCount:stats.issueCounts.kneeAngle,screenDistanceIssueCount:stats.issueCounts.screenDistance,eyeBreakCount:stats.eyeBreakCount,postureBreakCount:stats.postureBreakCount,stretchBreakCount:stats.stretchBreakCount,improvementAdvice:advice,startedAt:startedAt.toISOString(),endedAt:endedAt.toISOString(),notes:`Coverage ${Math.round(coverage*100)}% · Browser ${navigator.userAgent.slice(0,180)}`};eventLog.forEach(e=>e.sessionId=sessionId);renderSummary(pendingPayload,coverage,ranking);showScreen('summaryScreen');await saveCurrentResult();}
 $('finishBtn').addEventListener('click',finishSession);
 function angleLabel(value){return value==='side'?'มุมด้านข้าง':value==='diagonal'?'มุมเฉียง 45 องศา':'มุมตรง';}
-async function saveCurrentResult(){if(!pendingPayload)return;setSummarySaveState('saving');try{await serverCall('saveSession',pendingPayload);if(eventLog.length){for(let i=0;i<eventLog.length;i+=12)await serverCall('saveEvents',eventLog.slice(i,i+12));}setSummarySaveState('saved');localStorage.removeItem('smartsitPending');showToast('บันทึกผลลง Google Sheets แล้ว')}catch(error){console.error(error);setSummarySaveState('failed',error.message);localStorage.setItem('smartsitPending',JSON.stringify({payload:pendingPayload,events:eventLog}));showToast('บันทึกชีตไม่สำเร็จ: '+error.message+' กรุณาตรวจ Deployment /exec แล้วกดบันทึกใหม่',10000)}}
+async function saveCurrentResult(){if(!pendingPayload)return;setSummarySaveState('saving');try{await serverCall('saveSession',pendingPayload);if(eventLog.length){for(let i=0;i<eventLog.length;i+=4)await serverCall('saveEvents',eventLog.slice(i,i+4));}setSummarySaveState('saved');setBackendState('ok','เชื่อม Google Sheets แล้ว · บันทึกล่าสุดสำเร็จ');localStorage.removeItem('smartsitPending');showToast('บันทึกผลลง Google Sheets แล้ว')}catch(error){console.error(error);setSummarySaveState('failed',error.message);setBackendState('bad','เชื่อม Google Sheets ไม่สำเร็จ · '+error.message);localStorage.setItem('smartsitPending',JSON.stringify({payload:pendingPayload,events:eventLog}));showToast('บันทึกชีตไม่สำเร็จ: '+error.message+' กรุณาตรวจ Deployment /exec แล้วกดบันทึกใหม่',10000)}}
 function setSummarySaveState(state,error=''){const badge=$('saveBadge'),retry=$('retrySaveBtn');if(state==='saved'){badge.className='badge good';badge.textContent='บันทึกลง Google Sheets แล้ว';retry.classList.add('hidden')}else if(state==='failed'){badge.className='badge bad';badge.textContent='บันทึกไม่สำเร็จ'+(error?' · '+error:'');retry.classList.remove('hidden')}else{badge.className='badge warn';badge.textContent='กำลังบันทึกผล';retry.classList.add('hidden')}}
 $('retrySaveBtn').addEventListener('click',saveCurrentResult);
 function renderSummary(payload,coverage,ranking){
@@ -473,7 +536,7 @@ $('testCameraBtn').addEventListener('click',openTestCamera);$('closeTestCameraBt
 async function checkTestReadiness(){if(!testStream){showToast('กรุณาเปิดกล้องทดสอบก่อน');return}setLoading(true,'กำลังตรวจแสงและจุดร่างกาย...',35);try{await ensureLibraries();const video=$('testVideo');luminanceCanvas.width=64;luminanceCanvas.height=48;const c=luminanceCanvas.getContext('2d',{willReadFrequently:true});c.drawImage(video,0,0,64,48);const d=c.getImageData(0,0,64,48).data;let sum=0;for(let i=0;i<d.length;i+=16)sum+=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];const bright=sum/(d.length/16);const poses=await detector.estimatePoses(video,{maxPoses:1,flipHorizontal:false});const pose=poses[0],vis=pose?evaluateVisibility(pose,$('setAngle').value):null;$('setBrightness').textContent=bright<45?'แสงน้อย':bright>235?'แสงจ้าเกินไป':'แสงเหมาะสม';$('setLandmarks').textContent=vis?.valid?`ตรวจได้ ${Math.round(vis.confidence*100)}%`:'ยังเห็นจุดไม่ครบ';const ready=bright>=45&&bright<=235&&vis?.valid;$('setOverall').textContent=ready?'พร้อมตรวจ':'ควรปรับกล้อง/แสง';$('testMessage').textContent=ready?'พร้อมตรวจท่านั่ง':'กรุณาปรับแสง ระยะ หรือมุมกล้อง';setLoading(false)}catch(e){setLoading(false);showToast('ตรวจความพร้อมไม่สำเร็จ: '+e.message,7000)}}
 $('checkReadyBtn').addEventListener('click',checkTestReadiness);
 
-function init(){applySavedUser();loadLocalSettings();$('adminWarning').classList.toggle('show',!isApiConfigured()&&!(window.google&&google.script&&google.script.run));if(isApiConfigured()||window.google?.script?.run){serverCall('getSettings').then(s=>serverSettings={...serverSettings,...s}).catch(e=>console.warn(e))}const pending=JSON.parse(localStorage.getItem('smartsitPending')||'null');if(pending?.payload)showToast('พบผลที่ยังบันทึกไม่สำเร็จจากครั้งก่อน สามารถตรวจใหม่หรือเปิดหน้าสรุปภายหลังได้',7000);$('reportUserId').value=JSON.parse(localStorage.getItem('smartsitUser')||'{}').userId||'';}
+async function init(){applySavedUser();loadLocalSettings();$('adminWarning').classList.toggle('show',!isApiConfigured()&&!(window.google&&google.script&&google.script.run));if(isApiConfigured()||window.google?.script?.run){checkBackendConnection({silent:true});serverCall('getSettings').then(s=>serverSettings={...serverSettings,...s}).catch(e=>console.warn(e))}else setBackendState('bad','ยังไม่ได้ตั้งค่า URL ของ Apps Script');const pending=JSON.parse(localStorage.getItem('smartsitPending')||'null');if(pending?.payload)showToast('พบผลที่ยังบันทึกไม่สำเร็จจากครั้งก่อน สามารถตรวจใหม่หรือเปิดหน้าสรุปภายหลังได้',7000);$('reportUserId').value=JSON.parse(localStorage.getItem('smartsitUser')||'{}').userId||'';}
 window.addEventListener('beforeunload',()=>{stopMainCamera(false);stopTestCamera()});window.addEventListener('pagehide',()=>{stopMainCamera(false);stopTestCamera()});
 init();
 </script>
