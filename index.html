@@ -1,1351 +1,420 @@
 <!DOCTYPE html>
-<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef7fb"><title>SmartSit AR Coach</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<meta content="#0b63ce" name="theme-color"/>
+<title>SmartSit AR Coach</title>
 <style>
-:root{
-  --ink:#17324d;
-  --muted:#718096;
-  --blue:#3387e8;
-  --blue2:#4aa8ed;
-  --cyan:#42c9d7;
-  --soft:#f4f8fc;
-  --soft2:#eaf4ff;
-  --card:#ffffff;
-  --line:#dce8f1;
-  --good:#22a06b;
-  --warn:#f2a93b;
-  --bad:#e45858;
-  --shadow:0 18px 50px rgba(36,83,125,.13);
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;
-  min-height:100vh;
-  font-family:'Noto Sans Thai',system-ui,sans-serif;
-  color:var(--ink);
-  background:
-    radial-gradient(circle at 0 0,#e9f7ff 0,transparent 38%),
-    radial-gradient(circle at 100% 0,#e7fbf6 0,transparent 32%),
-    linear-gradient(135deg,#f8fbff,#eef8f8);
-}
-button,input,select{font:inherit}
-button{-webkit-tap-highlight-color:transparent}
-.hidden{display:none!important}
-.app{max-width:1500px;margin:auto;padding:18px}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:16px}
-.brand{display:flex;gap:12px;align-items:center}
-.logo{width:50px;height:50px;border-radius:17px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:grid;place-items:center;font-size:25px;color:#fff;box-shadow:0 10px 25px rgba(51,135,232,.28)}
-.brand h1{font-size:21px;margin:0}
-.brand p{margin:2px 0;color:var(--muted);font-size:13px}
-.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.nav-btn{border:1px solid var(--line);background:#fff;color:#3f5b75;border-radius:12px;padding:9px 13px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(30,70,110,.06)}
-.nav-btn:hover{border-color:#a9d0ef;background:#f6fbff}
-.pill,.version-pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:12px;box-shadow:0 6px 22px rgba(30,70,110,.07)}
-.version-pill{background:#eaf4ff;color:#2b73b8;border-color:#cfe4f7;font-weight:700}
-.screen{display:none}.screen.active{display:block}
-.card{background:rgba(255,255,255,.96);border:1px solid rgba(207,226,240,.9);border-radius:24px;box-shadow:var(--shadow)}
-.form-card{max-width:980px;margin:22px auto;padding:26px}
-.intro{text-align:center}.intro h2{font-size:29px;margin:0 0 7px}.intro p{color:var(--muted);margin:0}
-.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0}
-.mode-card{border:2px solid var(--line);border-radius:19px;padding:18px;cursor:pointer;position:relative;background:#fff;transition:.18s}
-.mode-card:hover{transform:translateY(-1px);border-color:#b9d9f1}
-.mode-card.active{border-color:var(--blue);background:linear-gradient(145deg,#f4f9ff,#f0fbfb);box-shadow:0 0 0 4px rgba(51,135,232,.10)}
-.mode-card input{position:absolute;opacity:0}.mode-card .emoji{font-size:35px}.mode-card h3{margin:8px 0 4px}.mode-card p{margin:0;color:var(--muted);font-size:13px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.full{grid-column:1/-1}
-.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
-.field input,.field select{width:100%;padding:12px 14px;border:1px solid #d3e3ef;border-radius:13px;background:#fff;color:var(--ink);outline:none;transition:.15s}
-.field input:focus,.field select:focus{border-color:#72b5ec;box-shadow:0 0 0 4px rgba(51,135,232,.10)}
-.consent{display:flex;gap:10px;background:#f1f8fd;border:1px solid #e0edf6;border-radius:14px;padding:12px;color:#52687d;font-size:13px;line-height:1.55}
-.btn{border:0;border-radius:14px;padding:11px 17px;font-weight:700;cursor:pointer;transition:.18s}
-.btn:hover{transform:translateY(-1px)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
-.btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:white;box-shadow:0 9px 22px rgba(51,135,232,.25)}
-.btn-light{background:#edf5fb;color:var(--ink)}
-.btn-danger{background:#fff0f0;color:#b73e3e}
-.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
-.monitor-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(310px,.8fr);gap:16px}
-.camera-card{overflow:hidden;background:#fff}
-.camera-head{padding:14px 17px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e9f1f6}
-.live{display:flex;gap:8px;align-items:center;font-weight:700;color:var(--ink)}
-.live i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 5px rgba(228,88,88,.13);animation:pulse 1.5s infinite}
-@keyframes pulse{50%{opacity:.45}}
-.camera-wrap{position:relative;overflow:hidden;background:#132333;aspect-ratio:16/9;min-height:430px}
-.camera-wrap video,.camera-wrap canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.mirror{transform:scaleX(-1)}
-.camera-guide{position:absolute;inset:9% 12%;border:2px dashed rgba(255,255,255,.34);border-radius:28px;pointer-events:none}
-.status-float{position:absolute;left:14px;right:14px;bottom:68px;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:16px;color:#fff;background:rgba(12,29,45,.76);backdrop-filter:blur(10px)}
-.status-head{display:flex;align-items:center;gap:10px}.status-icon{font-size:31px}.status-title{font-size:17px;font-weight:800}.status-desc{font-size:12px;opacity:.78;color:#fff}
-.score-orb{width:58px;height:58px;flex:none;border-radius:50%;display:grid;place-items:center;position:relative;font-weight:800;font-size:18px;background:conic-gradient(#45d4a0 0deg,rgba(255,255,255,.15) 0)}
-.score-orb:before{content:"";position:absolute;inset:5px;border-radius:50%;background:#173047}.score-orb b{position:relative}
-.camera-message{position:absolute;left:14px;right:14px;bottom:14px;color:#dceaf5;font-size:13px;text-align:left;padding:11px 14px;border-radius:14px;background:rgba(12,29,45,.70);backdrop-filter:blur(8px)}
-.controls{padding:15px;display:flex;flex-wrap:wrap;gap:9px}.controls .actions{margin:0;justify-content:flex-start}
-.side{display:flex;flex-direction:column;gap:16px}.status-card,.control-card,.tips-card{padding:17px}.status-card h2,.control-card h3,.tips-card h3{font-size:17px;margin:0 0 12px}
-.meter{height:10px;background:#e8f0f6;border-radius:999px;overflow:hidden;margin:13px 0}.meter div{height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));width:0}
-.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{padding:13px;border-radius:17px;background:var(--soft)}.metric b{display:block;font-size:22px}.metric span{font-size:12px;color:var(--muted)}
-.issue-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}.issue{display:flex;justify-content:space-between;gap:10px;background:#f6f9fc;border:1px solid #e8f0f6;border-radius:12px;padding:10px;font-size:13px}
-.note{font-size:12px;color:var(--muted);line-height:1.6}.tip{display:flex;gap:10px;margin-top:11px}.tip-icon{width:35px;height:35px;border-radius:12px;background:#eef6fc;display:grid;place-items:center;flex:none}.tip b{font-size:13px}.tip p{margin:2px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
-.summary-card{max-width:1000px;margin:20px auto;padding:24px}.summary-header{text-align:center}.score-circle{width:132px;height:132px;border-radius:50%;margin:16px auto;display:grid;place-items:center;background:conic-gradient(var(--blue) 0deg,#e7eef4 0);position:relative}.score-circle:before{content:"";position:absolute;width:102px;height:102px;background:#fff;border-radius:50%}.score-number{position:relative;font-size:34px;font-weight:900}
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}.summary-box{text-align:center;background:var(--soft);border-radius:16px;padding:14px}.summary-box b{display:block;font-size:23px}.summary-box span{font-size:12px;color:var(--muted)}
-.summary-detail{margin-top:15px;padding:14px;background:#f7fafc;border-radius:15px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.summary-detail div{font-size:13px}.summary-detail b{display:block;font-size:16px;margin-bottom:3px}.chart-wrap{height:250px;margin-top:20px}.history-row{display:grid;grid-template-columns:1.2fr .6fr .7fr 1fr;gap:8px;padding:10px;border-bottom:1px solid var(--line);font-size:13px}
-.toast{position:fixed;right:18px;bottom:18px;background:#173047;color:#fff;border-radius:14px;padding:13px 16px;display:none;z-index:99;box-shadow:0 12px 35px rgba(15,50,80,.25)}
-.loading{position:fixed;inset:0;background:rgba(248,252,255,.91);display:none;place-items:center;z-index:100;text-align:center;backdrop-filter:blur(3px)}.spinner{width:45px;height:45px;border:5px solid #dceaf5;border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite;margin:auto auto 10px}@keyframes spin{to{transform:rotate(360deg)}}
-.report-shell{display:flex;flex-direction:column;gap:15px}.report-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.report-head h2{margin:0}.report-head p{margin:4px 0 0;color:var(--muted)}
-.report-filter{padding:18px}.report-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:11px}.report-filter .field input,.report-filter .field select{padding:10px 12px}
-.report-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:11px}.report-kpi{padding:16px}.report-kpi b{display:block;font-size:25px;margin-bottom:4px}.report-kpi span{font-size:12px;color:var(--muted)}
-.report-charts{display:grid;grid-template-columns:1.6fr 1fr;gap:15px}.report-chart-card{padding:18px}.report-chart-card h3{margin:0 0 4px}.report-chart-card p{margin:0 0 12px;color:var(--muted);font-size:12px}.report-chart-box{height:280px}
-.report-table-card{padding:0;overflow:hidden}.report-table-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:17px 18px;border-bottom:1px solid var(--line)}.report-table-head h3{margin:0}.table-scroll{overflow:auto}.report-table{width:100%;border-collapse:collapse;min-width:980px}.report-table th,.report-table td{padding:12px 11px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;vertical-align:top}.report-table th{background:#eef6fc;color:#3e5b75;position:sticky;top:0;z-index:1}.report-table tr:hover td{background:#fbfdff}
-.mode-badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;font-weight:800;font-size:11px}.mode-personal{background:#dbeafe;color:#1d4ed8}.mode-classroom{background:#cffafe;color:#0e7490}.score-badge{display:inline-block;min-width:42px;text-align:center;border-radius:9px;padding:5px 7px;font-weight:900}.score-high{background:#dcfce7;color:#166534}.score-mid{background:#fef3c7;color:#92400e}.score-low{background:#fee2e2;color:#991b1b}.empty-report{text-align:center;color:var(--muted);padding:35px}.report-note{padding:12px 15px;background:#f2f8fc;border-radius:13px;color:var(--muted);font-size:12px}
-@media(max-width:1050px){.report-filter-grid{grid-template-columns:repeat(3,1fr)}.report-kpis{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:900px){.monitor-layout{grid-template-columns:1fr}.camera-wrap{min-height:52vh}.side{display:grid;grid-template-columns:1fr 1fr}.tips-card{grid-column:1/-1}}
-@media(max-width:700px){.app{padding:10px}.topbar{align-items:flex-start}.brand h1{font-size:18px}.top-actions{justify-content:flex-end}.version-pill,.pill{display:none}.mode-grid,.grid,.side{grid-template-columns:1fr}.form-card{padding:18px;margin:8px auto}.camera-wrap{min-height:55vh;aspect-ratio:auto}.summary-grid{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:1fr 1fr}.actions .btn{flex:1}.report-head{flex-direction:column}.report-filter-grid,.report-charts{grid-template-columns:1fr}.report-kpis{grid-template-columns:1fr 1fr}.summary-detail{grid-template-columns:1fr}.report-chart-box{height:240px}.status-float{bottom:76px}}
-@media print{body{background:#fff}.topbar,.report-filter,.report-head .actions,.toast,.loading{display:none!important}.app{max-width:none;padding:0}.report-shell{gap:10px}.card{box-shadow:none}.report-table-card{overflow:visible}.table-scroll{overflow:visible}.report-table{min-width:0}.report-table th,.report-table td{font-size:9px;padding:6px}.report-chart-box{height:230px}.screen{display:none!important}#reportScreen{display:block!important}}
+    :root{
+      --primary:#0b63ce;--primary2:#1d7ff2;--deep:#10355f;--sky:#eaf4ff;
+      --bg:#f4f8fc;--card:#fff;--text:#17283a;--muted:#637589;--line:#d9e6f2;
+      --good:#17855b;--warn:#d58a12;--bad:#c53a45;--unknown:#758395;
+      --shadow:0 14px 38px rgba(28,83,135,.12);--radius:22px;
+    }
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(180deg,#eaf4ff 0,#f7fbff 260px,#f4f8fc 100%);color:var(--text);font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,system-ui,sans-serif;min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
+    button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}.screen{display:none}.screen.active{display:block}.app{max-width:1340px;margin:auto;padding:14px 18px 40px}
+    .header{position:sticky;top:0;z-index:40;background:rgba(244,248,252,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(217,230,242,.8);margin:0 -18px 20px;padding:12px 18px}.header-inner{max-width:1340px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:flex;align-items:center;gap:12px;min-width:230px}.logo{width:52px;height:52px;border-radius:18px;background:linear-gradient(135deg,var(--primary),#4ea1ff);display:grid;place-items:center;color:#fff;font-size:27px;box-shadow:0 10px 24px #0b63ce35}.brand h1{font-size:20px;margin:0;color:var(--deep)}.brand p{font-size:12px;margin:2px 0 0;color:var(--muted)}
+    .nav{display:flex;gap:7px;align-items:center}.nav button{border:1px solid transparent;background:transparent;color:#4d657d;padding:10px 12px;border-radius:12px;font-weight:800;font-size:13px}.nav button:hover{background:#e7f2ff}.nav button.active{background:#ddebff;color:var(--primary);border-color:#bdd9f6}.privacy-pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;color:#46617c;font-size:12px;white-space:nowrap}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.page-title{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin:6px 0 18px}.page-title h2{font-size:30px;margin:0;color:var(--deep)}.page-title p{margin:6px 0 0;color:var(--muted);line-height:1.65}.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 11px;background:#e7f2ff;color:#0b63ce;font-size:12px;font-weight:800}.badge.warn{background:#fff4da;color:#9a6400}.badge.good{background:#e3f7ef;color:#0e7450}.badge.bad{background:#fde9eb;color:#a82e39}.badge.gray{background:#edf1f5;color:#667789}
+    .btn{border:0;border-radius:14px;padding:11px 17px;font-weight:850;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.16s}.btn:disabled{opacity:.48;cursor:not-allowed}.btn-primary{color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary2));box-shadow:0 8px 18px #0b63ce2d}.btn-primary:hover:not(:disabled){transform:translateY(-1px)}.btn-soft{background:#eaf4ff;color:#155fa9}.btn-light{background:#f3f6f9;color:#526a80;border:1px solid #e0e8ef}.btn-danger{background:#fde9eb;color:#a82e39}.btn-good{background:#e1f6ed;color:#0c7350}.btn-warning{background:#fff3d9;color:#956100}.btn-sm{padding:8px 11px;border-radius:11px;font-size:12px}.actions{display:flex;gap:9px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+    .setup-card{padding:24px}.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}.mode-card{position:relative;border:2px solid var(--line);border-radius:18px;padding:18px;display:flex;gap:14px;align-items:flex-start;cursor:pointer;transition:.16s}.mode-card:hover{border-color:#a9c9eb}.mode-card.active{border-color:var(--primary);background:#f0f7ff;box-shadow:0 0 0 4px rgba(11,99,206,.08)}.mode-card input{position:absolute;opacity:0}.mode-icon{width:50px;height:50px;border-radius:16px;background:#deedff;display:grid;place-items:center;font-size:27px;flex:none}.mode-card h3{margin:1px 0 4px}.mode-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+    .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.field label{display:block;margin-bottom:7px;font-size:13px;font-weight:850;color:#2c4863}.field input,.field select,.field textarea{width:100%;border:1px solid #cad9e8;border-radius:13px;padding:11px 13px;background:#fff;color:var(--text);outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:#5a9de5;box-shadow:0 0 0 3px #ddebff}.field small{display:block;color:var(--muted);margin-top:5px;font-size:11px}.full{grid-column:1/-1}.consent{display:flex;align-items:flex-start;gap:10px;background:#eef6ff;border:1px solid #d8eaff;border-radius:15px;padding:13px;font-size:12px;color:#4f6c87;line-height:1.6}.consent input{margin-top:3px;flex:none}.setup-footer{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.notice{background:#fff7e4;border:1px solid #f4ddb1;color:#815a10;border-radius:14px;padding:11px 13px;font-size:12px;line-height:1.55}
+    .monitor-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(330px,.72fr);gap:16px}.camera-card{overflow:hidden;background:#0b1825;position:relative;min-height:620px}.camera-stage{position:absolute;inset:0}.camera-stage video,.camera-stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.mirror{transform:scaleX(-1)}.camera-top{position:absolute;top:15px;left:15px;right:15px;display:flex;justify-content:space-between;align-items:center;gap:8px;z-index:3}.live-pill{background:#071522c9;color:#fff;border:1px solid #ffffff22;border-radius:999px;padding:8px 11px;font-size:12px;font-weight:800}.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#f04b54;margin-right:6px;box-shadow:0 0 0 4px #f04b5422}.quality-row{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.quality-chip{background:#071522b8;color:#eaf5ff;border-radius:999px;padding:7px 10px;font-size:11px}.camera-message{position:absolute;left:50%;bottom:82px;transform:translateX(-50%);width:min(90%,760px);padding:12px 15px;border-radius:14px;background:#06131fda;color:#fff;text-align:center;font-weight:800;z-index:3}.camera-controls{position:absolute;bottom:16px;left:16px;right:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;z-index:3}.camera-controls .btn{backdrop-filter:blur(8px)}
+    .side-stack{display:flex;flex-direction:column;gap:14px}.status-card{padding:18px}.status-row{display:flex;align-items:center;gap:12px}.status-icon{width:52px;height:52px;border-radius:17px;background:#eaf4ff;display:grid;place-items:center;font-size:29px}.status-title{font-size:21px;font-weight:900;color:var(--deep)}.status-desc{font-size:12px;color:var(--muted);margin-top:2px}.progress{height:11px;background:#edf2f7;border-radius:999px;overflow:hidden;margin:14px 0}.progress>div{height:100%;width:0;background:linear-gradient(90deg,#5ea9f4,var(--primary));transition:.2s}.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:#f6f9fc;border:1px solid #e5edf5;border-radius:14px;padding:11px}.metric b{display:block;font-size:22px;color:#173e66}.metric span{font-size:11px;color:var(--muted)}.issue-box{padding:17px}.issue-box h3,.control-card h3{margin:0 0 10px;font-size:16px}.issue-list{display:flex;flex-direction:column;gap:7px}.issue-item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#f7f9fb;border-radius:11px;padding:9px 10px;font-size:12px}.issue-item b{font-size:11px}.control-card{padding:17px}.control-card p{font-size:12px;color:var(--muted);line-height:1.6;margin:4px 0 12px}.readiness{display:flex;flex-direction:column;gap:7px}.ready-row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:8px 9px;background:#f6f9fc;border-radius:10px}.ready-row span:last-child{font-weight:850}
+    .posture-layout{display:grid;grid-template-columns:1.08fr .92fr;gap:17px}.illustration-card{padding:22px;min-height:560px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#eef7ff,#fff)}.guide-card{padding:20px}.guide-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}.guide-item{display:flex;gap:10px;border:1px solid #e2ebf4;background:#f8fbff;border-radius:14px;padding:12px}.guide-num{width:31px;height:31px;border-radius:10px;background:#dceeff;color:#0b63ce;display:grid;place-items:center;font-weight:900;flex:none}.guide-item h4{margin:0 0 3px;font-size:14px}.guide-item p{margin:0;font-size:12px;color:var(--muted);line-height:1.55}.timeline-habits{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.habit{padding:14px;border-radius:15px;background:#edf6ff;text-align:center}.habit b{display:block;color:var(--primary);font-size:22px}.habit span{font-size:12px;color:#506d87}
+    .report-filter{padding:18px}.filter-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.report-kpis{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin:14px 0}.kpi{padding:15px}.kpi b{display:block;font-size:22px;color:#163e68}.kpi span{font-size:11px;color:var(--muted)}.chart-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}.chart-card{padding:17px}.chart-card h3{margin:0 0 3px}.chart-card p{margin:0 0 12px;color:var(--muted);font-size:12px}.chart-box{height:285px}.table-card{margin-top:14px;overflow:hidden}.table-head{padding:15px 17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.table-scroll{overflow:auto}.report-table{width:100%;border-collapse:collapse;min-width:1160px}.report-table th,.report-table td{padding:11px 10px;border-bottom:1px solid #e6edf4;text-align:left;font-size:12px;vertical-align:top}.report-table th{background:#edf6ff;color:#315877;position:sticky;top:0;z-index:1}.report-table tbody tr:hover td{background:#fafcff}.score-tag{display:inline-flex;min-width:42px;justify-content:center;padding:5px 7px;border-radius:9px;font-weight:900}.score-high{background:#e3f7ef;color:#0f7652}.score-mid{background:#fff4d9;color:#966000}.score-low{background:#fde8ea;color:#a62f39}.empty-state{padding:40px;text-align:center;color:var(--muted)}
+    .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.settings-card{padding:19px}.settings-card h3{margin:0 0 12px}.settings-fields{display:grid;grid-template-columns:1fr 1fr;gap:11px}.range-row{display:grid;grid-template-columns:1fr 70px;gap:10px;align-items:center}.range-row input[type=range]{width:100%}.test-view{position:relative;background:#0b1825;border-radius:17px;overflow:hidden;min-height:300px}.test-view video{width:100%;height:300px;object-fit:cover}.test-overlay{position:absolute;left:12px;right:12px;bottom:12px;background:#071522cf;color:#fff;border-radius:13px;padding:10px;font-size:12px;text-align:center}
+    .summary-card{padding:22px}.summary-hero{text-align:center}.score-ring{width:140px;height:140px;margin:14px auto;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--primary) 0deg,#e8eef5 0);position:relative}.score-ring:after{content:"";position:absolute;width:106px;height:106px;border-radius:50%;background:#fff}.score-ring b{position:relative;z-index:1;font-size:37px;color:var(--deep)}.summary-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:16px 0}.summary-box{padding:14px;background:#f7fafe;border-radius:15px;text-align:center}.summary-box b{font-size:20px;display:block;color:#17446f}.summary-box span{font-size:11px;color:var(--muted)}.feedback-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.feedback-box{padding:15px;border-radius:15px;background:#f7fafe;border:1px solid #e4edf6}.feedback-box h3{font-size:14px;margin:0 0 7px}.feedback-box p{font-size:12px;color:var(--muted);line-height:1.6;margin:0}.issue-ranking{margin-top:14px}.issue-ranking table{width:100%;border-collapse:collapse}.issue-ranking th,.issue-ranking td{padding:9px;border-bottom:1px solid #e8eef5;text-align:left;font-size:12px}
+    .modal{position:fixed;inset:0;background:#07152299;z-index:100;display:none;align-items:center;justify-content:center;padding:18px}.modal.open{display:flex}.modal-card{width:min(920px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 30px 80px #06111f66}.modal-head{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:15px 18px;display:flex;justify-content:space-between;align-items:center;z-index:2}.modal-body{padding:18px}.close-btn{border:0;background:#eef3f7;border-radius:10px;width:36px;height:36px;font-size:20px}.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.detail-item{background:#f7fafe;border-radius:12px;padding:11px}.detail-item span{display:block;color:var(--muted);font-size:11px}.detail-item b{font-size:13px}.event-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}.event-row{display:grid;grid-template-columns:145px 120px 1fr 90px;gap:9px;padding:10px;background:#f7fafe;border-radius:12px;font-size:12px}
+    .loading{position:fixed;inset:0;background:#f7fbfff0;z-index:120;display:none;align-items:center;justify-content:center;text-align:center;padding:20px}.loading.show{display:flex}.loader-box{width:min(430px,92vw)}.spinner{width:52px;height:52px;border:5px solid #dce9f5;border-top-color:var(--primary);border-radius:50%;animation:spin .9s linear infinite;margin:0 auto 12px}@keyframes spin{to{transform:rotate(360deg)}}.load-progress{height:9px;background:#dce9f5;border-radius:999px;overflow:hidden;margin-top:12px}.load-progress div{height:100%;background:linear-gradient(90deg,#5aa7f2,var(--primary));width:0;transition:.25s}.toast{position:fixed;right:18px;bottom:18px;z-index:130;background:#10283f;color:#fff;padding:12px 15px;border-radius:13px;box-shadow:0 16px 40px #07152255;display:none;max-width:min(420px,calc(100vw - 36px));font-size:13px}.toast.show{display:block}.admin-warning{display:none;background:#fff1db;border:1px solid #f3d2a0;color:#7c5516;padding:12px 14px;border-radius:14px;margin-bottom:14px;font-size:12px;line-height:1.6}.admin-warning.show{display:block}
+    @media(max-width:1100px){.form-grid{grid-template-columns:1fr 1fr}.monitor-grid{grid-template-columns:1fr}.camera-card{min-height:600px}.side-stack{display:grid;grid-template-columns:1fr 1fr}.report-kpis{grid-template-columns:repeat(4,1fr)}.filter-grid{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:820px){.header-inner{align-items:flex-start}.nav{position:fixed;left:0;right:0;bottom:0;background:#ffffffed;border-top:1px solid var(--line);padding:8px max(8px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));display:grid;grid-template-columns:repeat(4,1fr);z-index:80;box-shadow:0 -10px 30px #173c6015}.nav button{font-size:11px;padding:9px 5px}.privacy-pill{display:none}.brand p{display:none}.app{padding-bottom:90px}.posture-layout,.chart-grid,.settings-grid{grid-template-columns:1fr}.guide-list{grid-template-columns:1fr}.filter-grid{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:repeat(3,1fr)}.feedback-grid{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:620px){.app{padding-left:10px;padding-right:10px}.header{margin:0 -10px 14px;padding:10px}.logo{width:45px;height:45px}.brand h1{font-size:17px}.page-title h2{font-size:24px}.mode-grid,.form-grid,.side-stack,.settings-fields{grid-template-columns:1fr}.setup-card{padding:16px}.camera-card{min-height:68vh}.camera-message{bottom:128px;font-size:12px}.camera-controls{justify-content:stretch}.camera-controls .btn{flex:1}.report-kpis{grid-template-columns:1fr 1fr}.filter-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}.timeline-habits{grid-template-columns:1fr}.event-row{grid-template-columns:1fr}.actions .btn{flex:1}.setup-footer{align-items:stretch}.setup-footer .notice{width:100%}}
+    @media print{.header,.page-title .actions,.report-filter,.toast,.loading,.modal{display:none!important}.screen{display:none!important}#reportScreen{display:block!important}.app{max-width:none;padding:0}.card{box-shadow:none}.table-scroll{overflow:visible}.report-table{min-width:0}.report-table th,.report-table td{font-size:9px;padding:5px}.chart-box{height:230px}}
+  
+/* ===== Friendly UI 2.1: ลดข้อความ ใช้ง่ายบนมือถือและ iPad ===== */
+body{background:linear-gradient(180deg,#edf6ff 0,#f8fbff 250px,#f3f7fb 100%)}
+.app{max-width:1240px}.header{margin-bottom:14px}.header-inner{gap:12px}.logo{width:46px;height:46px;border-radius:15px}.privacy-pill{font-size:11px;padding:7px 10px}
+.friendly-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:8px 0 14px}.friendly-hero h2{font-size:clamp(25px,4vw,36px);margin:2px 0 2px;color:var(--deep);line-height:1.18}.friendly-hero p{margin:0;color:var(--muted);font-size:14px}.eyebrow{font-size:10px;letter-spacing:.14em;color:var(--primary);font-weight:900}.history-hint{background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 13px;color:#4e6d88;font-size:12px;white-space:nowrap}.compact-hero{align-items:center}.friendly-card{max-width:980px;margin:auto;padding:20px}.compact-modes{margin:0 0 18px}.compact-modes .mode-card{padding:14px 16px;align-items:center}.compact-modes .mode-icon{width:44px;height:44px;font-size:23px}.compact-modes h3{font-size:16px}.compact-modes p{font-size:12px}.mode-check{margin-left:auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid var(--line);color:transparent;font-weight:900}.mode-card.active .mode-check{background:var(--primary);border-color:var(--primary);color:#fff}
+.quick-form{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}.more-options{margin-top:14px;border:1px solid var(--line);border-radius:15px;background:#f8fbff}.more-options>summary,.live-details>summary,.setting-panel>summary,.friendly-ranking>summary{list-style:none;cursor:pointer;font-weight:850;color:#294d6d}.more-options>summary::-webkit-details-marker,.live-details>summary::-webkit-details-marker,.setting-panel>summary::-webkit-details-marker,.friendly-ranking>summary::-webkit-details-marker{display:none}.more-options>summary{padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}.more-options>summary:after,.live-details>summary:after,.setting-panel>summary:after,.friendly-ranking>summary:after{content:'⌄';margin-left:auto;color:#7b91a5}.more-options[open]>summary:after,.live-details[open]>summary:after,.setting-panel[open]>summary:after,.friendly-ranking[open]>summary:after{content:'⌃'}.more-options summary small{font-weight:500;color:var(--muted)}.options-grid{padding:0 14px 14px;grid-template-columns:repeat(3,1fr)}.friendly-consent{margin-top:14px;align-items:center;padding:11px 13px;cursor:pointer}.friendly-consent span{display:flex;flex-direction:column}.friendly-consent small{font-size:11px;color:var(--muted)}.friendly-footer{justify-content:flex-end;margin-top:14px}.btn-start{min-width:200px;font-size:15px}.medical-note{margin:10px 0 0;text-align:center;color:#7d8d9c;font-size:10.5px}
+.monitor-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:5px 0 10px}.monitor-head>div{display:flex;align-items:center;gap:10px}.monitor-head b{font-size:18px;color:var(--deep)}.monitor-head>span{font-size:12px;color:var(--muted)}.friendly-monitor{grid-template-columns:minmax(0,1.78fr) minmax(300px,.62fr)}.friendly-monitor .camera-card{min-height:590px}.primary-controls .btn{padding:10px 13px}.btn-icon{min-width:44px;padding:10px}.friendly-side{gap:10px}.main-status{padding:15px}.main-status .status-row{align-items:center}.score-big{margin-left:auto;text-align:center;min-width:64px}.score-big b{display:block;font-size:30px;color:var(--primary);line-height:1}.score-big span{font-size:10px;color:var(--muted)}.compact-metrics{grid-template-columns:repeat(2,1fr);gap:7px}.compact-metrics .metric{padding:9px}.compact-metrics .metric b{font-size:18px}.subtle-metric{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}.subtle-metric b{order:2}.live-details{padding:0;overflow:hidden}.live-details>summary{padding:13px 15px;background:#fff}.live-details .issue-list,.live-details .readiness,.live-details .mini-advice{margin:0 14px 13px}.mini-advice{font-size:11px;color:var(--muted);line-height:1.5}
+.friendly-posture{grid-template-columns:1fr 1fr;align-items:stretch}.simple-illustration{min-height:470px;padding:14px}.friendly-guide{display:flex;flex-direction:column;justify-content:center}.quick-guide-list{grid-template-columns:1fr 1fr}.quick-guide-list .guide-item{padding:10px}.friendly-habits{grid-template-columns:repeat(3,1fr)}.friendly-habits .habit{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px}.friendly-habits .habit b{font-size:26px}.friendly-habits .habit span{font-size:10px}.guide-note{text-align:left;margin-top:12px}
+.report-hero{margin-bottom:10px}.friendly-filter{padding:15px}.report-search{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:10px;align-items:end}.report-options{margin-top:10px}.report-options .filter-grid{padding:0 13px 13px;grid-template-columns:repeat(3,1fr)}.friendly-kpis{grid-template-columns:repeat(7,1fr)}.friendly-kpis .kpi{text-align:center;padding:12px 8px}.friendly-kpis .kpi b{font-size:20px}.chart-card p{margin-bottom:6px}.tiny-muted{font-size:11px;color:var(--muted)}
+.settings-friendly{display:grid;gap:12px;max-width:980px;margin:auto}.setting-panel{padding:0;overflow:hidden}.setting-panel>summary{padding:16px 18px;font-size:16px;background:#fff}.setting-panel .settings-fields,.setting-panel .settings-test-grid{padding:0 18px 18px}.settings-test-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}.test-actions{margin-top:10px}.test-view{min-height:260px}.test-view video{height:260px}
+.friendly-summary{max-width:980px;margin:auto}.friendly-summary .summary-grid{grid-template-columns:repeat(6,1fr)}.friendly-summary .summary-box{padding:12px 7px}.friendly-summary .summary-box b{font-size:17px}.friendly-ranking{margin-top:13px;border:1px solid var(--line);border-radius:14px;overflow:hidden}.friendly-ranking>summary{padding:13px 15px;background:#f8fbff}.friendly-ranking table{margin:0 12px 12px;width:calc(100% - 24px)}.summary-actions{margin-top:14px}
+@media(max-width:1000px){.quick-form{grid-template-columns:1fr 1fr}.friendly-monitor{grid-template-columns:1fr}.friendly-monitor .camera-card{min-height:58vw;max-height:720px}.friendly-side{display:grid;grid-template-columns:1.25fr .75fr}.main-status{grid-row:span 2}.friendly-kpis{grid-template-columns:repeat(4,1fr)}.secondary-kpi{display:none}.settings-test-grid{grid-template-columns:1fr}.friendly-summary .summary-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:820px){.header{padding:8px 12px}.header-inner{align-items:center}.brand{min-width:0}.brand h1{font-size:17px}.nav button{font-size:0}.nav button::first-letter{font-size:20px}.friendly-hero{align-items:flex-start}.history-hint{display:none}.friendly-posture{grid-template-columns:1fr}.simple-illustration{min-height:auto}.quick-guide-list{grid-template-columns:1fr 1fr}.chart-grid{grid-template-columns:1fr}.chart-box{height:240px}.secondary-summary{display:none}}
+@media(max-width:620px){body{background:#f4f8fc}.app{padding-left:9px;padding-right:9px}.header{margin:0 -9px 9px}.logo{width:40px;height:40px;font-size:22px}.friendly-hero{margin:4px 2px 10px}.friendly-hero h2{font-size:25px}.friendly-hero p{font-size:12px}.friendly-card{padding:13px;border-radius:18px}.compact-modes{grid-template-columns:1fr 1fr;gap:8px}.compact-modes .mode-card{display:block;text-align:center;padding:11px 7px}.compact-modes .mode-icon{margin:auto auto 6px;width:38px;height:38px;font-size:20px}.compact-modes p{display:none}.mode-check{position:absolute;right:7px;top:7px;width:19px;height:19px;font-size:11px}.quick-form,.options-grid{grid-template-columns:1fr}.more-options>summary{align-items:flex-start}.more-options summary small{display:none}.friendly-footer{display:grid;grid-template-columns:.85fr 1.4fr}.friendly-footer .btn{width:100%;padding:12px 8px}.btn-start{min-width:0}.medical-note{font-size:9.5px}.monitor-head{margin:3px 2px 7px}.monitor-head b{font-size:15px}.monitor-head>span{display:none}.friendly-monitor .camera-card{min-height:64vh;border-radius:18px}.camera-top{top:9px;left:9px;right:9px}.quality-chip{padding:5px 7px;font-size:9px}.camera-message{bottom:124px;width:94%;padding:9px 10px;font-size:11px}.primary-controls{bottom:8px;left:8px;right:8px;display:grid;grid-template-columns:1fr 1fr 44px 44px}.primary-controls .btn{padding:9px 5px;font-size:11px}.primary-controls #baselineBtn,.primary-controls #runBtn,.primary-controls #pauseBtn,.primary-controls #resumeBtn,.primary-controls #finishBtn{grid-column:span 1}.friendly-side{display:flex}.main-status{padding:12px}.status-icon{width:43px;height:43px;font-size:24px}.status-title{font-size:17px}.score-big b{font-size:27px}.compact-metrics{grid-template-columns:repeat(4,1fr)}.compact-metrics .metric{padding:8px 4px;text-align:center}.compact-metrics .metric b{font-size:14px}.compact-metrics .metric span{font-size:9px}.subtle-metric{grid-column:1/-1;display:none}.live-details>summary{padding:12px}.quick-guide-list{grid-template-columns:1fr}.friendly-habits{grid-template-columns:repeat(3,1fr)}.friendly-habits .habit{display:block;padding:8px 4px}.report-search{grid-template-columns:1fr auto}.report-search .btn{height:43px}.report-options .filter-grid{grid-template-columns:1fr}.friendly-kpis{grid-template-columns:repeat(4,1fr);gap:6px}.friendly-kpis .kpi{padding:9px 4px}.friendly-kpis .kpi b{font-size:16px}.friendly-kpis .kpi span{font-size:9px}.report-table{min-width:950px}.setting-panel>summary{padding:14px}.setting-panel .settings-fields,.setting-panel .settings-test-grid{padding:0 13px 13px}.friendly-summary{padding:14px}.score-ring{width:116px;height:116px}.score-ring:after{width:88px;height:88px}.score-ring b{font-size:31px}.friendly-summary .summary-grid{grid-template-columns:repeat(4,1fr);gap:6px}.friendly-summary .summary-box{padding:9px 4px}.friendly-summary .summary-box b{font-size:14px}.friendly-summary .summary-box span{font-size:9px}.feedback-box{padding:12px}.summary-actions{display:grid;grid-template-columns:1fr 1fr}.summary-actions .btn{width:100%;padding:10px 6px;font-size:11px}}
 
-</style></head><body>
-<div class="loading" id="loading"><div><div class="spinner"></div><b id="loadingText">กำลังเตรียมระบบ AI...</b></div></div><div class="toast" id="toast"></div>
-<div class="app"><header class="topbar"><div class="brand"><div class="logo">🧍</div><div><h1>SmartSit AR Coach</h1><p>ตรวจท่านั่งส่วนบุคคลและห้องเรียนด้วย AI</p></div></div><div class="top-actions"><button class="nav-btn" id="homeNavBtn" type="button">📷 เริ่มตรวจ</button><button class="nav-btn" id="reportNavBtn" type="button">📊 รายงานผล</button><div class="version-pill">Blue Complete</div><div class="pill" id="headerUser">ยังไม่ได้เริ่มตรวจ</div></div></header>
-<section id="setupScreen" class="screen active"><div class="card form-card"><div class="intro"><h2>เลือกโหมดการตรวจ</h2><p>ใช้ได้ทั้งสำหรับตนเองและการทดลองกับนักเรียนหลายคน</p></div>
-<form id="userForm" onsubmit="return false;"><div class="mode-grid">
-<label class="mode-card active" data-mode="personal"><input type="radio" name="appMode" value="personal" checked><div class="emoji">🙋</div><h3>ตรวจส่วนบุคคล</h3><p>ตั้งค่าท่านั่งเฉพาะคน ตรวจละเอียด และสรุปประวัติรายบุคคล</p></label>
-<label class="mode-card" data-mode="classroom"><input type="radio" name="appMode" value="classroom"><div class="emoji">🏫</div><h3>ตรวจแบบห้องเรียน</h3><p>กล้องเดียวตรวจหลายคน แสดงจำนวนท่าดีและควรปรับแบบเรียลไทม์</p></label></div>
-<div class="grid">
-<div class="field"><label id="nameLabel">ชื่อหรือชื่อเล่น *</label><input id="name" required maxlength="80" placeholder="เช่น น้องมิน"></div>
-<div class="field"><label id="idLabel">รหัสผู้ใช้งาน *</label><input id="userId" required maxlength="40" placeholder="เช่น USER001"><div class="note">ใช้รหัสเดิมทุกครั้ง ระบบจะรวมประวัติและแนวโน้มของคนเดิมให้โดยอัตโนมัติ</div></div>
-<div class="field personal-field"><label>อายุ</label><input id="age" type="number" min="6" max="100" placeholder="12"></div>
-<div class="field personal-field"><label>กลุ่มผู้ใช้</label><select id="role"><option>นักเรียน</option><option>นักศึกษา</option><option>บุคลากรสำนักงาน</option><option>ผู้ทำงานที่บ้าน</option><option>เกมเมอร์</option><option>บุคคลทั่วไป</option></select></div>
-<div class="field"><label>กิจกรรม</label><select id="activityMode"><option>นั่งเรียน</option><option>อ่านหนังสือ</option><option>ทำงานหน้าคอมพิวเตอร์</option><option>ประชุมออนไลน์</option><option>เล่นเกม</option><option>ใช้งานทั่วไป</option></select></div>
-<div class="field"><label>กล้อง</label><select id="cameraFacing"><option value="user">กล้องหน้า</option><option value="environment">กล้องหลัง</option></select></div>
-<div class="field classroom-field hidden"><label>โรงเรียน/สถานที่ *</label><input id="organization" maxlength="100" placeholder="เช่น โรงเรียนตัวอย่าง"></div>
-<div class="field classroom-field hidden"><label>ชั้น/ห้อง *</label><input id="className" maxlength="60" placeholder="เช่น ป.6/1"></div>
-<div class="field classroom-field hidden"><label>จำนวนนักเรียนที่คาดว่าจะอยู่ในภาพ</label><input id="expectedPeople" type="number" min="1" max="40" value="4"></div>
-<div class="full consent"><input id="consent" type="checkbox" required><span>ยินยอมให้ใช้กล้องเพื่อวิเคราะห์ท่าทางแบบเรียลไทม์ โดยไม่บันทึกภาพหรือวิดีโอ และการทดลองกับนักเรียนควรได้รับความยินยอมจากโรงเรียน/ผู้ปกครองตามความเหมาะสม</span></div>
-</div><div class="actions"><button class="btn btn-light" id="setupReportBtn" type="button">ดูรายงานผลย้อนหลัง</button><button class="btn btn-primary" id="startBtn" type="button">เปิดกล้องและเริ่มตรวจ</button></div></form></div></section>
+/* มุมกล้องที่เห็นชัดสำหรับโหมดส่วนบุคคล */
+.angle-picker{margin:14px 0 4px;padding:14px;border:1px solid #cfe2f5;border-radius:17px;background:linear-gradient(135deg,#f5faff,#eaf4ff)}
+.angle-picker-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}.angle-picker-head b{color:#143e68}.angle-picker-head small{display:block;color:var(--muted);margin-top:2px}
+.angle-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.angle-option{position:relative;display:flex;align-items:center;gap:9px;padding:11px;border:2px solid #d7e5f3;border-radius:14px;background:#fff;cursor:pointer}.angle-option input{position:absolute;opacity:0}.angle-option.active{border-color:var(--primary);background:#f0f7ff;box-shadow:0 0 0 3px #0b63ce12}.angle-option .angle-icon{font-size:23px}.angle-option b{display:block;font-size:13px}.angle-option small{display:block;color:var(--muted);font-size:10px;margin-top:1px}
+.backend-state{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)}.backend-dot{width:9px;height:9px;border-radius:50%;background:#9aa8b6}.backend-state.ok .backend-dot{background:#17855b}.backend-state.bad .backend-dot{background:#c53a45}
+@media(max-width:650px){.angle-options{grid-template-columns:1fr}.angle-option{padding:10px 12px}.angle-picker-head{flex-direction:column}.setup-footer{align-items:stretch}.setup-footer .btn{width:100%}}
+</style>
+</head>
+<body>
+<div class="loading" id="loading"><div class="loader-box"><div class="spinner"></div><b id="loadingText">กำลังเตรียมระบบ...</b><div class="load-progress"><div id="loadingBar"></div></div><p id="loadingSub" style="color:#637589;font-size:12px"></p></div></div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="detailModal"><div class="modal-card"><div class="modal-head"><div><b>รายละเอียด Session</b><div id="modalSessionId" style="font-size:11px;color:#637589"></div></div><button class="close-btn" id="closeModalBtn" type="button">×</button></div><div class="modal-body" id="modalBody"></div></div></div>
+<div class="app">
+<header class="header">
+<div class="header-inner">
+<div class="brand"><div class="logo">🪑</div><div><h1>SmartSit AR Coach</h1><p>ผู้ช่วยดูแลท่านั่งด้วย AI</p></div></div>
+<nav class="nav">
+<button class="active" data-nav="setupScreen">📷 เริ่ม</button>
+<button data-nav="postureScreen">🧘 ท่านั่ง</button>
+<button data-nav="reportScreen">📊 ผล</button>
+<button data-nav="settingsScreen">⚙️ ตั้งค่า</button>
+</nav>
+<div class="privacy-pill">🔒 ไม่บันทึกภาพหรือวิดีโอ</div>
+</div>
+</header>
+<div class="admin-warning" id="adminWarning"><b>ผู้ดูแลระบบ:</b> กรุณาใส่ลิงก์ Apps Script ที่ลงท้ายด้วย <code>/exec</code> ในตัวแปร <code>APPS_SCRIPT_URL</code> ด้านบนของ JavaScript แล้วอัปโหลดไฟล์นี้ขึ้น GitHub อีกครั้ง ผู้ใช้งานทั่วไปจะไม่ต้องกรอกลิงก์ใด ๆ</div>
+<section class="screen active" id="setupScreen">
+<div class="friendly-hero">
+<div><span class="eyebrow">SMARTSIT AR COACH</span><h2>เริ่มดูแลท่านั่ง</h2><p>กรอกสั้น ๆ แล้วเปิดกล้องได้เลย</p></div>
+<div class="history-hint">ใช้ <b>รหัสเดิม</b> เพื่อดูประวัติครั้งก่อน</div>
+</div>
+<div class="card setup-card friendly-card">
+<div class="mode-grid compact-modes">
+<label class="mode-card active" data-mode="personal"><input checked="" name="appMode" type="radio" value="personal"/><div class="mode-icon">🙋</div><div><h3>ส่วนบุคคล</h3><p>ตรวจและติดตามรายคน</p></div><span class="mode-check">✓</span></label>
+<label class="mode-card" data-mode="classroom"><input name="appMode" type="radio" value="classroom"/><div class="mode-icon">🏫</div><div><h3>ห้องเรียน</h3><p>ดูภาพรวมหลายคน</p></div><span class="mode-check">✓</span></label>
+</div>
+<form id="setupForm" onsubmit="return false">
+<div class="quick-form">
+<div class="field"><label id="nameLabel">ชื่อหรือชื่อเล่น *</label><input autocomplete="name" id="name" maxlength="100" placeholder="เช่น น้องมิน" required=""/></div>
+<div class="field"><label id="userIdLabel">รหัสผู้ใช้ *</label><input autocomplete="username" id="userId" maxlength="60" placeholder="เช่น 6612345678" required=""/><small>ใช้รหัสเดิมทุกครั้งเพื่อรวมประวัติ</small></div>
+<div class="field"><label>กำลังทำอะไร</label><select id="activityMode"><option>นั่งเรียน</option><option>อ่านหนังสือ</option><option selected="">ทำงานหน้าคอมพิวเตอร์</option><option>ประชุมออนไลน์</option><option>เล่นเกม</option><option>ใช้งานทั่วไป</option></select></div>
+<div class="field classroom-only hidden"><label>โรงเรียน/หน่วยงาน *</label><input id="organization" maxlength="120" placeholder="เช่น โรงเรียนตัวอย่าง"/></div>
+<div class="field classroom-only hidden"><label>ชั้น/ห้อง *</label><input id="className" maxlength="80" placeholder="เช่น ม.2/1"/></div>
+<div class="field classroom-only hidden"><label>จำนวนคนโดยประมาณ</label><input id="expectedPeople" max="40" min="1" type="number" value="4"/></div>
+</div>
+<div class="angle-picker personal-only" id="anglePicker">
+<div class="angle-picker-head"><div><b>เลือกมุมกล้องสำหรับตรวจคนเดียว</b><small id="angleHelp">มุมตรงเหมาะกับไหล่และความสมดุลของร่างกาย</small></div><span class="badge">เลือกก่อนเปิดกล้อง</span></div>
+<div class="angle-options">
+<label class="angle-option active" data-angle="front"><input type="radio" name="cameraAngleChoice" value="front" checked><span class="angle-icon">🧍</span><span><b>มุมตรง</b><small>ดูไหล่ ศอก และเข่าทั้งสองข้าง</small></span></label>
+<label class="angle-option" data-angle="diagonal"><input type="radio" name="cameraAngleChoice" value="diagonal"><span class="angle-icon">↗️</span><span><b>เฉียง 45°</b><small>ดูแนวลำตัวและมุมข้อต่อ</small></span></label>
+<label class="angle-option" data-angle="side"><input type="radio" name="cameraAngleChoice" value="side"><span class="angle-icon">🚶</span><span><b>ด้านข้างเต็มตัว</b><small>ให้เห็นศีรษะถึงข้อเท้า</small></span></label>
+</div>
+<select id="cameraAngle" class="hidden"><option value="front">มุมตรง</option><option value="diagonal">มุมเฉียง 45 องศา</option><option value="side">มุมด้านข้าง</option></select>
+</div>
+<details class="more-options">
+<summary><span>⚙️ ตัวเลือกเพิ่มเติม</span><small>อายุ อุปกรณ์ กล้อง และความไว</small></summary>
+<div class="form-grid options-grid">
+<div class="field personal-only"><label>อายุ</label><input id="age" max="100" min="6" placeholder="เช่น 20" type="number"/></div>
+<div class="field personal-only"><label>กลุ่มผู้ใช้</label><select id="role"><option>นักเรียน</option><option selected="">นักศึกษา</option><option>บุคลากรสำนักงาน</option><option>ผู้ทำงานที่บ้าน</option><option>เกมเมอร์</option><option>บุคคลทั่วไป</option></select></div>
+<div class="field"><label>อุปกรณ์</label><select id="deviceType"><option selected="">คอมพิวเตอร์หรือโน้ตบุ๊ก</option><option>iPad หรือ Tablet</option><option>โทรศัพท์มือถือ</option></select></div>
+<div class="field"><label>กล้อง</label><select id="cameraFacing"><option selected="" value="user">กล้องหน้า</option><option value="environment">กล้องหลัง</option></select></div>
 
-<section id="monitorScreen" class="screen">
-  <div class="monitor-layout">
-    <div class="card camera-card">
-      <div class="camera-head">
-        <div class="live"><i></i><span id="liveLabel">LIVE PERSONAL AI</span></div>
-        <small>AR ประมวลผลบนอุปกรณ์ · ไม่บันทึกภาพ</small>
-      </div>
-      <div class="camera-wrap">
-        <video id="video" playsinline muted></video>
-        <canvas id="canvas"></canvas>
-        <div class="camera-guide"></div>
-        <div class="status-float">
-          <div class="status-head">
-            <div class="status-icon" id="statusIcon">⏳</div>
-            <div><div class="status-title" id="statusTitle">กำลังเตรียม</div><div class="status-desc" id="statusDesc">กรุณารอสักครู่</div></div>
-          </div>
-          <div class="score-orb"><b id="liveScore">0</b></div>
-        </div>
-        <div class="camera-message" id="cameraMessage">จัดตำแหน่งกล้องให้เห็นร่างกายชัดเจน</div>
-      </div>
-      <div class="controls">
-        <div class="actions">
-          <button class="btn btn-primary" id="calibrateBtn" type="button">บันทึกท่ามาตรฐาน</button>
-          <button class="btn btn-light" id="switchCameraBtn" type="button">สลับกล้อง</button>
-          <button class="btn btn-danger" id="stopBtn" type="button">สิ้นสุดและบันทึก</button>
-        </div>
-      </div>
-    </div>
-    <aside class="side">
-      <div class="card status-card">
-        <h2>สรุปการใช้งาน</h2>
-        <div class="metrics">
-          <div class="metric"><b id="sessionTime">00:00</b><span>เวลาที่ตรวจ</span></div>
-          <div class="metric"><b id="metricA">0</b><span id="metricALabel">เวลาท่าดี</span></div>
-          <div class="metric"><b id="metricB">0</b><span id="metricBLabel">แจ้งเตือน</span></div>
-          <div class="metric"><b id="currentModeText">เดี่ยว</b><span>รูปแบบการตรวจ</span></div>
-        </div>
-        <div class="meter"><div id="scoreBar"></div></div>
-      </div>
-      <div class="card control-card">
-        <h3>สิ่งที่ระบบตรวจพบ</h3>
-        <div class="issue-list">
-          <div class="issue"><span id="issue1Label">คอยื่น/ก้มหน้า</span><b id="issue1">–</b></div>
-          <div class="issue"><span id="issue2Label">ลำตัวค่อม</span><b id="issue2">–</b></div>
-          <div class="issue"><span id="issue3Label">ไหล่เอียง</span><b id="issue3">–</b></div>
-        </div>
-        <h3 id="controlTitle" style="margin-top:16px">ตั้งค่าท่ามาตรฐาน</h3>
-        <p class="note" id="controlText">นั่งในท่าที่ถูกต้อง แล้วกดบันทึกท่ามาตรฐาน</p>
-      </div>
-      <div class="card tips-card">
-        <h3>ท่านั่งที่แนะนำ</h3>
-        <div class="tip"><div class="tip-icon">👀</div><div><b>ระดับสายตา</b><p>ขอบบนจอใกล้ระดับสายตา ไม่ก้มคอต่อเนื่อง</p></div></div>
-        <div class="tip"><div class="tip-icon">🧍</div><div><b>หลังและไหล่</b><p>พิงพนัก ไหล่ผ่อนคลาย และอยู่ใกล้ระดับเดียวกัน</p></div></div>
-        <div class="tip"><div class="tip-icon">📏</div><div><b>ระยะจากกล้อง</b><p>ให้เห็นศีรษะ ไหล่ และสะโพกชัดเจน</p></div></div>
-        <p class="note" id="privacyNote" style="margin:12px 0 0">ภาพจากกล้องประมวลผลในอุปกรณ์และไม่ถูกบันทึก รุ่นห้องเรียนใช้หมายเลขชั่วคราว P1, P2 โดยไม่ระบุตัวบุคคล</p>
-      </div>
-    </aside>
-  </div>
+<div class="field"><label>คุณภาพภาพ</label><select id="resolution"><option value="480">480p เร็วกว่า</option><option selected="" value="720">720p แนะนำ</option></select></div>
+<div class="field"><label>ความไวในการเตือน</label><select id="sensitivity"><option value="low">ต่ำ</option><option selected="" value="medium">กลาง</option><option value="high">สูง</option></select></div>
+</div>
+</details>
+<label class="consent friendly-consent"><input id="consent" required="" type="checkbox"/><span><b>ยินยอมใช้กล้อง</b><small>ประมวลผลบนอุปกรณ์ ไม่บันทึกภาพหรือวิดีโอ</small></span></label>
+<div class="setup-footer friendly-footer">
+<div class="backend-state" id="backendState"><span class="backend-dot"></span><span id="backendStateText">กำลังตรวจการเชื่อมต่อชีต</span></div><button class="btn btn-light" id="openSettingsBtn" type="button">ทดสอบอุปกรณ์</button>
+<button class="btn btn-primary btn-start" id="startCameraBtn" type="button">เปิดกล้อง <span>→</span></button>
+</div>
+<p class="medical-note">เป็นคำแนะนำด้านพฤติกรรม ไม่ใช่เครื่องมือวินิจฉัยทางการแพทย์</p>
+</form>
+</div>
 </section>
-
-<section id="summaryScreen" class="screen"><div class="card summary-card"><div class="summary-header"><h2 id="summaryTitle">สรุปผลการตรวจ</h2><p id="summaryName"></p><div class="score-circle" id="scoreCircle"><div class="score-number" id="finalScore">0</div></div><h3 id="finalMessage"></h3></div><div class="summary-grid"><div class="summary-box"><b id="sumTotal">0 นาที</b><span>เวลาทั้งหมด</span></div><div class="summary-box"><b id="sumGood">0 นาที</b><span id="sumGoodLabel">ท่าดี</span></div><div class="summary-box"><b id="sumBad">0 นาที</b><span id="sumBadLabel">ควรปรับ</span></div><div class="summary-box"><b id="sumAlerts">0</b><span id="sumAlertLabel">แจ้งเตือน</span></div></div><div class="summary-detail"><div><b id="summaryMainIssue">–</b><span>สิ่งที่พบเด่น</span></div><div><b id="summaryStarted">–</b><span>เริ่มตรวจ</span></div><div><b id="summaryEnded">–</b><span>สิ้นสุดการตรวจ</span></div></div><div class="chart-wrap"><canvas id="historyChart"></canvas></div><div id="history"></div><div class="actions"><button class="btn btn-light" id="backBtn">กลับหน้าหลัก</button><button class="btn btn-light" id="summaryReportBtn">ดูหน้ารายงานทั้งหมด</button><button class="btn btn-primary" id="restartBtn">เริ่มตรวจอีกครั้ง</button></div></div></section>
-
-<section id="reportScreen" class="screen">
-  <div class="report-shell">
-    <div class="report-head">
-      <div><h2>รายงานผลการตรวจจับ</h2><p>ดูผลย้อนหลังทั้งโหมดส่วนบุคคลและโหมดห้องเรียนจากข้อมูลที่บันทึกใน Google Sheets</p></div>
-      <div class="actions"><button class="btn btn-light" id="printReportBtn" type="button">พิมพ์รายงาน</button><button class="btn btn-primary" id="exportReportBtn" type="button">ส่งออก CSV</button></div>
-    </div>
-
-    <div class="card report-filter">
-      <div class="report-filter-grid">
-        <div class="field"><label>รหัสผู้ใช้งาน/รหัสครู *</label><input id="reportUserId" maxlength="40" placeholder="กรอกรหัสเดียวกับตอนตรวจ"></div>
-        <div class="field"><label>โหมด</label><select id="reportMode"><option value="all">ทั้งหมด</option><option value="personal">ส่วนบุคคล</option><option value="classroom">ห้องเรียน</option></select></div>
-        <div class="field"><label>โรงเรียน/สถานที่</label><input id="reportOrganization" maxlength="100" placeholder="ใช้กรองโหมดห้องเรียน"></div>
-        <div class="field"><label>ชั้น/ห้อง</label><input id="reportClassName" maxlength="60" placeholder="เช่น ป.6/1"></div>
-        <div class="field"><label>ตั้งแต่วันที่</label><input id="reportDateFrom" type="date"></div>
-        <div class="field"><label>ถึงวันที่</label><input id="reportDateTo" type="date"></div>
-      </div>
-      <div class="actions"><button class="btn btn-light" id="resetReportBtn" type="button">ล้างตัวกรอง</button><button class="btn btn-primary" id="loadReportBtn" type="button">แสดงรายงาน</button></div>
-      <div class="report-note">ระบบแสดงรายงานเฉพาะรหัสที่ระบุ เพื่อไม่เปิดข้อมูลทั้งหมดแก่ผู้ใช้งานทั่วไป และไม่มีภาพหรือวิดีโอในรายงาน</div>
-    </div>
-
-    <div class="report-kpis">
-      <div class="card report-kpi"><b id="reportSessions">0</b><span>ครั้งที่ตรวจ</span></div>
-      <div class="card report-kpi"><b id="reportAvgScore">0</b><span>คะแนนเฉลี่ย</span></div>
-      <div class="card report-kpi"><b id="reportTotalTime">0 นาที</b><span>เวลาตรวจรวม</span></div>
-      <div class="card report-kpi"><b id="reportGoodRate">0%</b><span id="reportGoodLabel">อัตราท่าดี</span></div>
-      <div class="card report-kpi"><b id="reportAttention">0</b><span>แจ้งเตือน/พบควรปรับ</span></div>
-      <div class="card report-kpi"><b id="reportLatest">–</b><span>ตรวจล่าสุด</span></div>
-    </div>
-
-    <div class="report-charts">
-      <div class="card report-chart-card"><h3>แนวโน้มคะแนน</h3><p>แสดงคะแนนแต่ละครั้งตามลำดับเวลา</p><div class="report-chart-box"><canvas id="reportScoreChart"></canvas></div></div>
-      <div class="card report-chart-card"><h3 id="reportStatusTitle">สัดส่วนผลการตรวจ</h3><p id="reportStatusDesc">เปรียบเทียบท่าดีและท่าที่ควรปรับ</p><div class="report-chart-box"><canvas id="reportStatusChart"></canvas></div></div>
-    </div>
-
-    <div class="card report-table-card">
-      <div class="report-table-head"><div><h3>รายละเอียดการตรวจจับ</h3><span class="note" id="reportResultCount">ยังไม่ได้โหลดข้อมูล</span></div></div>
-      <div class="table-scroll"><table class="report-table"><thead><tr><th>วันที่–เวลา</th><th>โหมด</th><th>ผู้ใช้/สถานที่</th><th>กิจกรรม/ชั้น</th><th>ระยะเวลา</th><th>คะแนน</th><th>ผลท่าดี</th><th>ผลควรปรับ</th><th>แจ้งเตือน</th><th>รายละเอียด</th></tr></thead><tbody id="reportTableBody"><tr><td colspan="10" class="empty-report">กรอกรหัสแล้วกด “แสดงรายงาน”</td></tr></tbody></table></div>
-    </div>
-  </div>
+<section class="screen" id="monitorScreen">
+<div class="monitor-head">
+<div><span class="badge" id="monitorModeBadge">โหมดส่วนบุคคล</span><b id="monitorHeading">ตรวจท่านั่งแบบเรียลไทม์</b></div>
+<span id="monitorSubheading">ให้เห็นศีรษะถึงเข่า</span>
+</div>
+<div class="monitor-grid friendly-monitor">
+<div class="card camera-card">
+<div class="camera-stage"><video id="video" muted="" playsinline=""></video><canvas id="overlay"></canvas></div>
+<div class="camera-top"><div class="live-pill"><span class="live-dot"></span><span id="liveLabel">CAMERA READY</span></div><div class="quality-row"><span class="quality-chip" id="fpsChip">FPS 0</span><span class="quality-chip" id="confidenceChip">ความชัด 0%</span><span class="quality-chip" id="lightChip">แสง –</span></div></div>
+<div class="camera-message" id="cameraMessage">กำลังเตรียมกล้องและ AI...</div>
+<div class="camera-controls primary-controls">
+<button class="btn btn-soft" id="baselineBtn" type="button">1. ตั้งท่ามาตรฐาน</button>
+<button class="btn btn-primary" disabled="" id="runBtn" type="button">2. เริ่มตรวจ</button>
+<button class="btn btn-warning hidden" id="pauseBtn" type="button">พัก</button>
+<button class="btn btn-good hidden" id="resumeBtn" type="button">ทำต่อ</button>
+<button class="btn btn-danger" disabled="" id="finishBtn" type="button">จบและบันทึก</button>
+<button aria-label="เปิดหรือปิดเสียง" class="btn btn-light btn-icon" id="soundBtn" type="button">🔊</button>
+<button aria-label="หยุดกล้อง" class="btn btn-light btn-icon" id="stopCameraBtn" type="button">⏹</button>
+</div>
+</div>
+<aside class="side-stack friendly-side">
+<div class="card status-card main-status">
+<div class="status-row"><div class="status-icon" id="statusIcon">📷</div><div><div class="status-title" id="statusTitle">ตรวจความพร้อม</div><div class="status-desc" id="statusDesc">จัดตำแหน่งกล้องให้เหมาะสม</div></div><div class="score-big"><b id="liveScore">0</b><span>คะแนน</span></div></div>
+<div class="progress"><div id="scoreBar"></div></div>
+<div class="metric-grid compact-metrics">
+<div class="metric"><b id="sessionTime">00:00</b><span>เวลารวม</span></div>
+<div class="metric"><b id="goodTime">00:00</b><span>ท่าดี</span></div>
+<div class="metric"><b id="badTime">00:00</b><span>ควรปรับ</span></div>
+<div class="metric"><b id="alertCount">0</b><span>แจ้งเตือน</span></div>
+<div class="metric subtle-metric"><b id="unknownTime">00:00</b><span>ตรวจไม่ชัด</span></div>
+</div>
+</div>
+<details class="card live-details" open=""><summary>สิ่งที่ตรวจพบตอนนี้</summary><div class="issue-list" id="liveIssueList"><div class="issue-item"><span>ยังไม่ได้เริ่มตรวจ</span><b class="badge gray">รอ</b></div></div></details>
+<details class="card live-details"><summary>ความพร้อมของภาพ</summary><div class="readiness"><div class="ready-row"><span>แสง</span><span id="readyLight">กำลังตรวจ</span></div><div class="ready-row"><span>จุดร่างกาย</span><span id="readyBody">กำลังตรวจ</span></div><div class="ready-row"><span>ระยะและมุม</span><span id="readyDistance">กำลังตรวจ</span></div><div class="ready-row"><span>AI Pose</span><span id="readyAi">กำลังโหลด</span></div></div><p class="mini-advice" id="readyAdvice">ถ้าเลือกมุมด้านข้าง ต้องให้เห็นเต็มตัวถึงข้อเท้า</p></details>
+</aside>
+</div>
 </section>
-
+<section class="screen" id="postureScreen">
+<div class="friendly-hero compact-hero"><div><span class="eyebrow">QUICK GUIDE</span><h2>จัดท่านั่งให้พร้อม</h2><p>ดูภาพเดียวแล้วปรับตามจุดสำคัญ</p></div></div>
+<div class="posture-layout friendly-posture">
+<div class="card illustration-card simple-illustration">
+<svg aria-label="ภาพแนะนำท่านั่งที่ถูกต้อง" role="img" viewbox="0 0 620 540" width="100%">
+<rect fill="#f4f9ff" height="504" rx="36" width="584" x="18" y="18"></rect>
+<rect fill="#173b61" height="82" rx="10" width="135" x="430" y="92"></rect><rect fill="#d9efff" height="56" rx="5" width="111" x="442" y="104"></rect><line stroke="#527596" stroke-width="10" x1="498" x2="498" y1="174" y2="244"></line><rect fill="#527596" height="13" rx="6" width="105" x="446" y="239"></rect>
+<path d="M152 170 L152 410" stroke="#276da9" stroke-linecap="round" stroke-width="34"></path><rect fill="#276da9" height="38" rx="18" width="210" x="137" y="382"></rect>
+<circle cx="255" cy="145" fill="#ffd8c7" r="44"></circle><path d="M217 140 Q225 95 267 102 Q302 108 297 143" fill="#163a5b"></path>
+<line stroke="#22a0d6" stroke-linecap="round" stroke-width="18" x1="255" x2="255" y1="190" y2="322"></line>
+<line stroke="#22a0d6" stroke-linecap="round" stroke-width="16" x1="250" x2="340" y1="225" y2="270"></line><line stroke="#22a0d6" stroke-linecap="round" stroke-width="16" x1="340" x2="425" y1="270" y2="270"></line>
+<line stroke="#22a0d6" stroke-linecap="round" stroke-width="18" x1="255" x2="342" y1="322" y2="394"></line><line stroke="#22a0d6" stroke-linecap="round" stroke-width="18" x1="342" x2="342" y1="394" y2="476"></line><line stroke="#22a0d6" stroke-linecap="round" stroke-width="18" x1="342" x2="418" y1="476" y2="476"></line>
+<path d="M306 251 A45 45 0 0 1 339 294" fill="none" stroke="#ffb020" stroke-width="5"></path><text fill="#a76500" font-size="20" font-weight="700" x="347" y="286">90°</text>
+<path d="M315 383 A46 46 0 0 1 360 410" fill="none" stroke="#ffb020" stroke-width="5"></path><text fill="#a76500" font-size="20" font-weight="700" x="364" y="421">90°</text>
+<line stroke="#70aee4" stroke-dasharray="8 8" stroke-width="3" x1="255" x2="498" y1="78" y2="78"></line><text fill="#326b9c" font-size="17" x="322" y="66">จอใกล้ระดับสายตา</text>
+<circle cx="255" cy="145" fill="#0b63ce" r="7"></circle><circle cx="255" cy="225" fill="#0b63ce" r="7"></circle><circle cx="340" cy="270" fill="#0b63ce" r="7"></circle><circle cx="255" cy="322" fill="#0b63ce" r="7"></circle><circle cx="342" cy="394" fill="#0b63ce" r="7"></circle>
+</svg>
+</div>
+<div class="card guide-card friendly-guide">
+<div class="guide-list quick-guide-list">
+<div class="guide-item"><div class="guide-num">1</div><div><h4>คอและศีรษะ</h4><p>ตรง ไม่ก้มและไม่ยื่นไปข้างหน้า</p></div></div>
+<div class="guide-item"><div class="guide-num">2</div><div><h4>หลังและไหล่</h4><p>หลังพิงพนัก ไหล่ผ่อนคลายและสมดุล</p></div></div>
+<div class="guide-item"><div class="guide-num">3</div><div><h4>ศอก</h4><p>งอประมาณ 90° และวางแขนใกล้ลำตัว</p></div></div>
+<div class="guide-item"><div class="guide-num">4</div><div><h4>เข่าและเท้า</h4><p>เข่าประมาณ 90° เท้าวางราบ</p></div></div>
+<div class="guide-item"><div class="guide-num">5</div><div><h4>หน้าจอ</h4><p>ใกล้ระดับสายตา ระยะประมาณ 12–18 นิ้ว</p></div></div>
+<div class="guide-item"><div class="guide-num">6</div><div><h4>อย่านั่งค้าง</h4><p>ขยับตัวและเปลี่ยนอิริยาบถเป็นระยะ</p></div></div>
+</div>
+<div class="timeline-habits friendly-habits"><div class="habit"><b>10</b><span>นาที<br/>พักสายตา</span></div><div class="habit"><b>20</b><span>นาที<br/>เปลี่ยนท่า</span></div><div class="habit"><b>60</b><span>นาที<br/>ยืดเหยียด</span></div></div>
+<p class="medical-note guide-note">เป็นคำแนะนำทั่วไปจากภาพกล้อง ไม่ใช่การวินิจฉัยโรค</p>
+</div>
+</div>
+</section>
+<section class="screen" id="reportScreen">
+<div class="friendly-hero compact-hero report-hero"><div><span class="eyebrow">MY RESULTS</span><h2>ผลย้อนหลัง</h2><p>ค้นหาด้วยรหัสเดียวกับตอนเริ่มตรวจ</p></div><div class="actions"><button class="btn btn-light" id="printReportBtn" type="button">พิมพ์</button><button class="btn btn-primary" id="exportReportBtn" type="button">CSV</button></div></div>
+<div class="card report-filter friendly-filter">
+<div class="report-search"><div class="field"><label>รหัสผู้ใช้/รหัสการทดลอง *</label><input id="reportUserId" placeholder="กรอกรหัสของคุณ"/></div><button class="btn btn-primary" id="loadReportBtn" type="button">ดูผล</button></div>
+<details class="more-options report-options"><summary><span>ตัวกรองเพิ่มเติม</span><small>โหมด สถานที่ ห้อง และวันที่</small></summary><div class="filter-grid"><div class="field"><label>โหมด</label><select id="reportMode"><option value="all">ทั้งหมด</option><option value="personal">ส่วนบุคคล</option><option value="classroom">ห้องเรียน</option></select></div><div class="field"><label>โรงเรียน/หน่วยงาน</label><input id="reportOrg" placeholder="ไม่กรอกก็ได้"/></div><div class="field"><label>ชั้น/ห้อง</label><input id="reportClass" placeholder="ไม่กรอกก็ได้"/></div><div class="field"><label>ตั้งแต่วันที่</label><input id="reportFrom" type="date"/></div><div class="field"><label>ถึงวันที่</label><input id="reportTo" type="date"/></div><div class="actions"><button class="btn btn-light" id="resetReportBtn" type="button">ล้างตัวกรอง</button></div></div></details>
+</div>
+<div class="report-kpis friendly-kpis"><div class="card kpi"><b id="kpiSessions">0</b><span>ครั้ง</span></div><div class="card kpi"><b id="kpiScore">0</b><span>คะแนนเฉลี่ย</span></div><div class="card kpi"><b id="kpiTotal">0 นาที</b><span>เวลารวม</span></div><div class="card kpi"><b id="kpiAlerts">0</b><span>แจ้งเตือน</span></div><div class="card kpi secondary-kpi"><b id="kpiGood">0 นาที</b><span>ท่าดี</span></div><div class="card kpi secondary-kpi"><b id="kpiBad">0 นาที</b><span>ควรปรับ</span></div><div class="card kpi secondary-kpi"><b id="kpiUnknown">0 นาที</b><span>ไม่ชัด</span></div></div>
+<div class="chart-grid"><div class="card chart-card"><h3>แนวโน้มคะแนน</h3><div class="chart-box"><canvas id="scoreChart"></canvas></div></div><div class="card chart-card"><h3>สิ่งที่พบบ่อย</h3><p id="frequentIssueText">ยังไม่มีข้อมูล</p><div class="chart-box"><canvas id="issueChart"></canvas></div></div></div>
+<div class="card table-card"><div class="table-head"><div><b>รายละเอียด</b><div class="tiny-muted" id="reportCount">ยังไม่ได้โหลดข้อมูล</div></div></div><div class="table-scroll"><table class="report-table"><thead><tr><th>วันที่–เวลา</th><th>Session ID</th><th>โหมด</th><th>ผู้ใช้/ห้อง</th><th>กิจกรรม</th><th>เวลา</th><th>คะแนน</th><th>ท่าดี</th><th>ควรปรับ</th><th>ไม่ชัด</th><th>Alert</th><th>ปัญหาหลัก</th><th>รายละเอียด</th></tr></thead><tbody id="reportBody"><tr><td class="empty-state" colspan="13">กรอกรหัสแล้วกด “ดูผล”</td></tr></tbody></table></div></div>
+</section>
+<section class="screen" id="settingsScreen">
+<div class="friendly-hero compact-hero"><div><span class="eyebrow">DEVICE SETUP</span><h2>ตั้งค่าอุปกรณ์</h2><p>ค่าแนะนำถูกเลือกไว้แล้ว ปรับเฉพาะเมื่อจำเป็น</p></div></div>
+<div class="settings-friendly">
+<details class="card setting-panel" open=""><summary>📷 กล้องและภาพ</summary><div class="settings-fields"><div class="field"><label>ประเภทอุปกรณ์</label><select id="setDeviceType"><option>คอมพิวเตอร์หรือโน้ตบุ๊ก</option><option>iPad หรือ Tablet</option><option>โทรศัพท์มือถือ</option></select></div><div class="field"><label>กล้องหน้า/หลัง</label><select id="setFacing"><option value="user">กล้องหน้า</option><option value="environment">กล้องหลัง</option></select></div><div class="field full"><label>กล้องในอุปกรณ์</label><select id="cameraDevice"><option value="">เลือกอัตโนมัติ</option></select></div><div class="field"><label>มุมกล้อง</label><select id="setAngle"><option value="front">มุมตรง</option><option value="diagonal">มุมเฉียง 45 องศา</option><option value="side">มุมด้านข้าง</option></select></div><div class="field"><label>ความละเอียด</label><select id="setResolution"><option value="480">480p</option><option value="720">720p</option></select></div><div class="field"><label>ความไว</label><select id="setSensitivity"><option value="low">ต่ำ</option><option value="medium">กลาง</option><option value="high">สูง</option></select></div></div></details>
+<details class="card setting-panel"><summary>🔊 เสียงแจ้งเตือน</summary><div class="settings-fields"><div class="field"><label>เสียงพูด</label><select id="setSound"><option value="on">เปิด</option><option value="off">ปิด</option></select></div><div class="field"><label>ระดับเสียง</label><div class="range-row"><input id="setVolume" max="1" min="0" step="0.1" type="range"/><b id="volumeValue">0.8</b></div></div><div class="field"><label>ความเร็วเสียง</label><div class="range-row"><input id="setRate" max="1.4" min="0.7" step="0.1" type="range"/><b id="rateValue">1.0</b></div></div><div class="full actions"><button class="btn btn-light" id="testSoundBtn" type="button">ทดสอบเสียง</button><button class="btn btn-primary" id="saveSettingsBtn" type="button">บันทึกค่า</button></div></div></details>
+<details class="card setting-panel"><summary>✅ ทดสอบความพร้อม</summary><div class="settings-test-grid"><div><div class="test-view"><video id="testVideo" muted="" playsinline=""></video><div class="test-overlay" id="testMessage">กดเปิดกล้องทดสอบ</div></div><div class="actions test-actions"><button class="btn btn-primary" id="testCameraBtn" type="button">เปิดกล้อง</button><button class="btn btn-light" id="checkReadyBtn" type="button">ตรวจความพร้อม</button><button class="btn btn-danger" id="closeTestCameraBtn" type="button">หยุด</button></div></div><div class="readiness"><div class="ready-row"><span>สิทธิ์กล้อง</span><span id="setPermission">ยังไม่ทดสอบ</span></div><div class="ready-row"><span>กล้อง</span><span id="setCameraName">อัตโนมัติ</span></div><div class="ready-row"><span>แสง</span><span id="setBrightness">ยังไม่ตรวจ</span></div><div class="ready-row"><span>จุดร่างกาย</span><span id="setLandmarks">ยังไม่ตรวจ</span></div><div class="ready-row"><span>สถานะ</span><span id="setOverall">ยังไม่พร้อมตรวจ</span></div></div></div></details>
+</div>
+</section>
+<section class="screen" id="summaryScreen">
+<div class="friendly-hero compact-hero"><div><span class="badge" id="saveBadge">กำลังบันทึกผล</span><h2>สรุปผล</h2><p id="summaryIdentity"></p></div></div>
+<div class="card summary-card friendly-summary"><div class="summary-hero"><div class="score-ring" id="scoreRing"><b id="finalScore">0</b></div><h3 id="summaryStatus">กำลังสรุปผล</h3><p class="tiny-muted" id="summaryCoverage"></p></div><div class="summary-grid"><div class="summary-box"><b id="sumTotal">00:00</b><span>เวลารวม</span></div><div class="summary-box"><b id="sumGood">00:00</b><span>ท่าดี</span></div><div class="summary-box"><b id="sumBad">00:00</b><span>ควรปรับ</span></div><div class="summary-box"><b id="sumAlerts">0</b><span>แจ้งเตือน</span></div><div class="summary-box secondary-summary"><b id="sumUnknown">00:00</b><span>ไม่ชัด</span></div><div class="summary-box secondary-summary"><b id="sumSessionId">–</b><span>Session ID</span></div></div><div class="feedback-grid"><div class="feedback-box"><h3>👍 ทำได้ดี</h3><p id="strengthText">–</p></div><div class="feedback-box"><h3>🎯 ควรปรับ</h3><p id="improvementText">–</p></div><div class="feedback-box"><h3>✨ ครั้งถัดไป</h3><p id="goalText">–</p></div></div><details class="issue-ranking friendly-ranking"><summary>ดูรายละเอียดปัญหาที่พบ</summary><table><thead><tr><th>รายการ</th><th>ครั้ง</th><th>คำแนะนำ</th></tr></thead><tbody id="summaryIssueBody"></tbody></table></details><div class="actions summary-actions"><button class="btn btn-light" id="downloadFallbackBtn" type="button">ดาวน์โหลด CSV</button><button class="btn btn-warning hidden" id="retrySaveBtn" type="button">บันทึกใหม่</button><button class="btn btn-light" id="summaryReportBtn" type="button">ดูผลย้อนหลัง</button><button class="btn btn-primary" id="restartBtn" type="button">ตรวจอีกครั้ง</button></div></div>
+</section>
 </div>
 <script>
+/* ============================================================================
+   ตั้งค่าเพียงจุดเดียวสำหรับ GitHub Pages
+   เปลี่ยนข้อความด้านล่างเป็น URL เว็บแอป Apps Script ของคุณที่ลงท้ายด้วย /exec
+   ผู้ใช้งานทั่วไปจะไม่ต้องกรอก URL นี้
+============================================================================ */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQAnQVENtlVWX7-XjuS7WzTPnzyjeLWnz--uk4jb4_IDOrlm4ivVwoypOW3piuQZ7bvA/exec';
+
 const $ = id => document.getElementById(id);
+const $$ = selector => Array.from(document.querySelectorAll(selector));
+const APP_VERSION = '3.0.0-full-angle';
 const MAX_CLASSROOM_POSES = 6;
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjsxj3Ylk_cedY6zJKyV82f7e9m3JmFljb-7kNBhZEALQ-wYz_BYmWAhG0uMi9kevTmw/exec';
-let jsonpSequence = 0;
 
-let detector = null;
-let stream = null;
-let animationId = null;
-let inferenceBusy = false;
-let lastInferenceAt = 0;
-let chart = null;
-let reportScoreChart = null;
-let reportStatusChart = null;
-let reportRows = [];
-let appMode = 'personal';
-let facingMode = 'user';
-let user = {};
-let baseline = null;
-let latestPersonalMetrics = null;
-let startedAt = null;
-let lastTick = 0;
-let badSince = null;
-let lastAlertAt = 0;
-let consecutiveAiErrors = 0;
-
-let config = {
-  forwardHeadThreshold: 0.12,
-  slouchThreshold: 0.12,
-  shoulderTiltThreshold: 0.08,
-  alertDelaySeconds: 8,
-  minVisibility: 0.35,
-  classroomBadRatioAlert: 0.35,
-  maxClassroomPoses: MAX_CLASSROOM_POSES
+const DEFAULT_SETTINGS = {
+  deviceType:'คอมพิวเตอร์หรือโน้ตบุ๊ก', facingMode:'user', cameraAngle:'front',
+  resolution:'720', sensitivity:'medium', soundEnabled:true, volume:0.8, speechRate:1.0,
+  deviceId:''
 };
 
-let stats = resetStats();
+const SENSITIVITY = {
+  low:{headTilt:12,shoulderTilt:11,torsoLean:17,forwardDelta:.18,headDrop:.18,slouchDelta:.18,elbowMin:75,elbowMax:105,kneeMin:75,kneeMax:105,upperArm:55},
+  medium:{headTilt:9,shoulderTilt:8,torsoLean:13,forwardDelta:.13,headDrop:.13,slouchDelta:.13,elbowMin:80,elbowMax:100,kneeMin:80,kneeMax:100,upperArm:45},
+  high:{headTilt:7,shoulderTilt:6,torsoLean:10,forwardDelta:.10,headDrop:.10,slouchDelta:.10,elbowMin:82,elbowMax:98,kneeMin:82,kneeMax:98,upperArm:38}
+};
+
+const ISSUE_META = {
+  forwardHead:{label:'คอยื่นหรือก้มหน้า',advice:'ปรับหน้าจอให้อยู่ระดับสายตา ลดการก้มคอ และดึงศีรษะกลับให้อยู่แนวเดียวกับไหล่',voice:'กรุณาปรับศีรษะให้อยู่แนวเดียวกับไหล่'},
+  headTilt:{label:'ศีรษะเอียง',advice:'จัดศีรษะให้ตรง ไม่เอียงค้างไปด้านใดด้านหนึ่ง และตรวจตำแหน่งหน้าจอ',voice:'กรุณาปรับศีรษะให้ตรงขึ้นอีกนิด'},
+  slouch:{label:'ลำตัวโน้มหรือหลังค่อม',advice:'นั่งให้เต็มเบาะ หลังชิดพนัก และยืดหลังให้ตรงตามธรรมชาติ',voice:'กรุณานั่งหลังตรงขึ้นอีกนิด'},
+  shoulderTilt:{label:'ไหล่เอียง',advice:'ปรับโต๊ะ อุปกรณ์ และท่านั่งให้สมดุล พร้อมผ่อนคลายไหล่ทั้งสองข้าง',voice:'กรุณาผ่อนคลายไหล่'},
+  elbowAngle:{label:'มุมศอกไม่ใกล้ 90°',advice:'ปรับความสูงของโต๊ะหรือเก้าอี้ให้ศอกงอใกล้ 90 องศา',voice:'กรุณาปรับศอกให้ใกล้เก้าสิบองศา'},
+  kneeAngle:{label:'มุมเข่าไม่ใกล้ 90°',advice:'ปรับความสูงของเก้าอี้หรือใช้ที่รองเท้า เพื่อให้เข่าใกล้ 90 องศา',voice:'กรุณาปรับเข่าและวางเท้าให้เหมาะสม'},
+  upperArm:{label:'ต้นแขนห่างลำตัว',advice:'เลื่อนเมาส์หรือคีย์บอร์ดให้ใกล้ตัว และวางต้นแขนอย่างผ่อนคลาย',voice:'กรุณาวางศอกใกล้ลำตัว'},
+  screenDistance:{label:'ระยะจากกล้อง/จอควรปรับ',advice:'ปรับระยะให้เห็นร่างกายครบและใช้ระยะจอประมาณ 12–18 นิ้วตามความเหมาะสม ทั้งนี้ระบบไม่ได้วัดระยะจริง',voice:'กรุณาปรับระยะจากหน้าจอให้เหมาะสม'}
+};
 
 const CONNECTIONS = [
-  ['nose', 'left_eye'], ['nose', 'right_eye'],
-  ['left_eye', 'left_ear'], ['right_eye', 'right_ear'],
-  ['left_shoulder', 'right_shoulder'],
-  ['left_shoulder', 'left_elbow'], ['left_elbow', 'left_wrist'],
-  ['right_shoulder', 'right_elbow'], ['right_elbow', 'right_wrist'],
-  ['left_shoulder', 'left_hip'], ['right_shoulder', 'right_hip'],
-  ['left_hip', 'right_hip'],
-  ['left_hip', 'left_knee'], ['right_hip', 'right_knee']
+  ['nose','left_eye'],['nose','right_eye'],['left_eye','left_ear'],['right_eye','right_ear'],
+  ['left_shoulder','right_shoulder'],['left_shoulder','left_elbow'],['left_elbow','left_wrist'],
+  ['right_shoulder','right_elbow'],['right_elbow','right_wrist'],['left_shoulder','left_hip'],
+  ['right_shoulder','right_hip'],['left_hip','right_hip'],['left_hip','left_knee'],
+  ['left_knee','left_ankle'],['right_hip','right_knee'],['right_knee','right_ankle']
 ];
 
-function resetStats() {
-  return {
-    totalSeconds: 0,
-    goodSeconds: 0,
-    badSeconds: 0,
-    unknownSeconds: 0,
-    alertCount: 0,
-    noPoseCount: 0,
-    issueFrames: { forward: 0, slouch: 0, shoulder: 0 },
-    detectedSum: 0,
-    detectedFrames: 0,
-    maxDetected: 0,
-    personObservations: 0,
-    goodPersonObservations: 0,
-    badPersonObservations: 0
-  };
+let appMode='personal', userData={}, localSettings={...DEFAULT_SETTINGS};
+let detector=null, detectorReady=false, stream=null, testStream=null, animationId=null;
+let testCanvas=document.createElement('canvas'), luminanceCanvas=document.createElement('canvas');
+let lastPoseResult=[], latestPersonal=null, latestReadiness=null, baseline=null, baselineCapture=null;
+let sessionState='idle', startedAt=null, sessionId='', stats=null, eventLog=[];
+let lastFrameAt=0, lastTickAt=0, lastInferenceAt=0, inferenceBusy=false, fpsSamples=[], currentFps=0;
+let issueTrackers={}, scoreChart=null, issueChart=null, reportRows=[], pendingPayload=null;
+let serverSettings={WARNING_SECONDS:5,SERIOUS_SECONDS:15,CRITICAL_SECONDS:30,ALERT_COOLDOWN_SECONDS:20,EYE_BREAK_SECONDS:600,POSTURE_BREAK_SECONDS:1200,STRETCH_BREAK_SECONDS:3600,MIN_DATA_COVERAGE:.5};
+
+function resetStats(){return{totalSeconds:0,goodSeconds:0,badSeconds:0,unknownSeconds:0,alertCount:0,eyeBreakCount:0,postureBreakCount:0,stretchBreakCount:0,issueCounts:{forwardHead:0,headTilt:0,slouch:0,shoulderTilt:0,elbowAngle:0,kneeAngle:0,upperArm:0,screenDistance:0},detectedFrames:0,personFrames:0,goodPersonFrames:0,badPersonFrames:0,maxDetected:0,lastEyeBreak:0,lastPostureBreak:0,lastStretchBreak:0};}
+function resetTrackers(){issueTrackers={};Object.keys(ISSUE_META).forEach(key=>issueTrackers[key]={active:false,activeSince:0,lastCountAt:0,lastAlertAt:0});}
+
+function isApiConfigured(){return APPS_SCRIPT_URL.startsWith('https://script.google.com/macros/s/')&&APPS_SCRIPT_URL.endsWith('https://script.google.com/macros/s/AKfycbyrpO0Rxvgg-Hx6ltdbup3LwBckX34I7HvcIuxNT4vG7E_K8Yheb_VQkHeciyYhZeMGOw/exec');}
+function showToast(message,duration=4500){const t=$('toast');t.textContent=message;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),duration);}
+function setLoading(show,text='กำลังเตรียมระบบ...',progress=15,sub=''){const el=$('loading');$('loadingText').textContent=text;$('loadingBar').style.width=progress+'%';$('loadingSub').textContent=sub;el.classList.toggle('show',show);}
+function escapeHtml(value){return String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));}
+function clamp(value,min,max){return Math.min(max,Math.max(min,value));}
+function formatTime(seconds){seconds=Math.max(0,Math.round(seconds||0));const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60),s=seconds%60;return h?`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
+function formatMinutes(seconds){const n=Math.round(Number(seconds||0)/60);return n+' นาที';}
+function thaiDate(value){if(!value)return'–';const d=new Date(value);return isNaN(d)?'–':d.toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'});}
+function uuid(prefix='SS'){return`${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;}
+
+function serverCall(name,...args){
+  if(window.google&&google.script&&google.script.run){return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[name](...args));}
+  if(!isApiConfigured())return Promise.reject(new Error('ยังไม่ได้ตั้งค่า APPS_SCRIPT_URL ในไฟล์ index.html'));
+  let data={};
+  if(name==='getSessionDetail')data={sessionId:args[0]}; else if(args.length)data=args[0]??{};
+  return jsonpCall(name,data);
 }
+function jsonpCall(action,data={},timeout=30000){return new Promise((resolve,reject)=>{const cb='__smartsit_cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);const script=document.createElement('script');const timer=setTimeout(()=>cleanup(new Error('ติดต่อ Google Apps Script ไม่สำเร็จหรือใช้เวลานานเกินไป')),timeout);function cleanup(error,result){clearTimeout(timer);delete window[cb];script.remove();error?reject(error):resolve(result);}window[cb]=response=>{if(!response||response.ok===false)cleanup(new Error(response?.error||'Backend ตอบกลับไม่สำเร็จ'));else cleanup(null,response.data);};const params=new URLSearchParams({action,callback:cb,t:Date.now(),data:JSON.stringify(data)});script.src=APPS_SCRIPT_URL+'?'+params.toString();script.onerror=()=>cleanup(new Error('โหลดคำตอบจาก Apps Script ไม่สำเร็จ'));document.head.appendChild(script);});}
 
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
-  $(id).classList.add('active');
-  window.scrollTo(0, 0);
+function showScreen(id){if(id!=='monitorScreen'&&stream&&sessionState!=='finished'){showToast('กรุณาจบการตรวจหรือหยุดกล้องก่อนเปลี่ยนหน้า');return false;}if(id!=='settingsScreen')stopTestCamera();$$('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');$$('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===id));window.scrollTo(0,0);return true;}
+$$('[data-nav]').forEach(btn=>btn.addEventListener('click',()=>showScreen(btn.dataset.nav)));
+$('openSettingsBtn').addEventListener('click',()=>showScreen('settingsScreen'));
+
+function selectMode(mode){appMode=mode;$$('.mode-card').forEach(c=>c.classList.toggle('active',c.dataset.mode===mode));document.querySelector(`input[name="appMode"][value="${mode}"]`).checked=true;$$('.personal-only').forEach(el=>el.classList.toggle('hidden',mode!=='personal'));$$('.classroom-only').forEach(el=>el.classList.toggle('hidden',mode!=='classroom'));$('nameLabel').textContent=mode==='personal'?'ชื่อหรือชื่อเล่น *':'ชื่อครูหรือผู้ควบคุม *';$('userIdLabel').textContent=mode==='personal'?'รหัสผู้ใช้ *':'รหัสการทดลอง/รหัสครู *';$('organization').required=mode==='classroom';$('className').required=mode==='classroom';if(mode==='classroom')$('cameraFacing').value='environment';}
+$$('.mode-card').forEach(card=>card.addEventListener('click',()=>selectMode(card.dataset.mode)));
+
+
+const ANGLE_HELP={front:'มุมตรง: ให้เห็นศีรษะ ไหล่ ศอก สะโพก และเข่าทั้งสองข้าง',diagonal:'มุมเฉียง 45°: ให้เห็นช่วงศีรษะถึงเข่า เหมาะกับการดูแนวลำตัวและข้อต่อ',side:'มุมด้านข้างเต็มตัว: ตั้งกล้องห่างพอให้เห็นศีรษะ หู ไหล่ ศอก สะโพก เข่า และข้อเท้าด้านเดียวกัน'};
+function selectCameraAngle(angle){
+  const select=$('cameraAngle'); if(select) select.value=angle;
+  $$('.angle-option').forEach(el=>el.classList.toggle('active',el.dataset.angle===angle));
+  const radio=document.querySelector(`input[name="cameraAngleChoice"][value="${angle}"]`); if(radio) radio.checked=true;
+  if($('angleHelp')) $('angleHelp').textContent=ANGLE_HELP[angle]||'';
+  if($('setAngle')) $('setAngle').value=angle;
 }
-
-function loading(show, text = 'กำลังเตรียมระบบ AI...') {
-  $('loadingText').textContent = text;
-  $('loading').style.display = show ? 'grid' : 'none';
-}
-
-function toast(message, duration = 4500) {
-  const element = $('toast');
-  element.textContent = message;
-  element.style.display = 'block';
-  clearTimeout(element._timer);
-  element._timer = setTimeout(() => {
-    element.style.display = 'none';
-  }, duration);
-}
-
-function serverCall(name, ...args) {
-  return new Promise((resolve, reject) => {
-    if (!APPS_SCRIPT_URL || !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/i.test(APPS_SCRIPT_URL)) {
-      reject(new Error('ยังไม่ได้ตั้งค่าลิงก์ Apps Script ในไฟล์ index.html'));
-      return;
-    }
-
-    const callbackName = `__smartsit_jsonp_${Date.now()}_${jsonpSequence++}`;
-    const script = document.createElement('script');
-    const timeout = window.setTimeout(() => {
-      cleanup();
-      reject(new Error('เชื่อมต่อ Google Sheets ไม่สำเร็จหรือใช้เวลานานเกินไป'));
-    }, 20000);
-
-    function cleanup() {
-      window.clearTimeout(timeout);
-      try { delete window[callbackName]; } catch (error) { window[callbackName] = undefined; }
-      if (script.parentNode) script.parentNode.removeChild(script);
-    }
-
-    window[callbackName] = response => {
-      cleanup();
-      if (response && response.ok) {
-        resolve(response.result);
-      } else {
-        reject(new Error(response && response.error ? response.error : 'Google Sheets ตอบกลับไม่สำเร็จ'));
-      }
-    };
-
-    const query = new URLSearchParams({
-      action: name,
-      args: JSON.stringify(args),
-      callback: callbackName,
-      _: String(Date.now())
-    });
-
-    script.async = true;
-    script.src = `${APPS_SCRIPT_URL}?${query.toString()}`;
-    script.onerror = () => {
-      cleanup();
-      reject(new Error('โหลดคำตอบจาก Google Sheets ไม่สำเร็จ'));
-    };
-    document.head.appendChild(script);
-  });
-}
-
-function loadClassicScript(url) {
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[data-fallback-src="${url}"]`);
-    if (existing) {
-      existing.addEventListener('load', resolve, { once: true });
-      existing.addEventListener('error', reject, { once: true });
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = url;
-    script.async = true;
-    script.dataset.fallbackSrc = url;
-    script.onload = resolve;
-    script.onerror = () => reject(new Error(`โหลดไฟล์ไม่สำเร็จ: ${url}`));
-    document.head.appendChild(script);
-  });
-}
-
-async function ensureAiLibraries() {
-  if (!window.tf) {
-    await loadClassicScript('https://unpkg.com/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
-  }
-  if (!window.poseDetection) {
-    await loadClassicScript('https://unpkg.com/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js');
-  }
-  if (!window.tf || !window.poseDetection) {
-    throw new Error('โหลดไลบรารี AI ไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตหรือเครือข่ายของโรงเรียน');
-  }
-}
-
-async function ensureDetector() {
-  await ensureAiLibraries();
-  await tf.ready();
-
-  if (tf.getBackend() !== 'webgl') {
-    try {
-      await tf.setBackend('webgl');
-      await tf.ready();
-    } catch (error) {
-      console.warn('WebGL ใช้ไม่ได้ ระบบจะใช้ backend ที่มีอยู่', error);
-    }
-  }
-
-  if (detector) return;
-
-  const detectorConfig = {
-    modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,
-    enableTracking: true,
-    trackerType: poseDetection.TrackerType.BoundingBox,
-    minPoseScore: 0.18,
-    multiPoseMaxDimension: 256
-  };
-
-  detector = await poseDetection.createDetector(
-    poseDetection.SupportedModels.MoveNet,
-    detectorConfig
-  );
-}
-
-async function init() {
-  try {
-    const loadedConfig = await serverCall('getAppConfig');
-    config = { ...config, ...loadedConfig };
-  } catch (error) {
-    console.warn('โหลดค่าตั้งต้นไม่ได้ ใช้ค่าในโปรแกรมแทน', error);
-  }
-
-  const saved = JSON.parse(localStorage.getItem('smartsitUser') || '{}');
-  ['name', 'userId', 'age', 'role', 'activityMode', 'organization', 'className', 'expectedPeople']
-    .forEach(key => {
-      if (saved[key] && $(key)) $(key).value = saved[key];
-    });
-  selectMode(saved.appMode || 'personal');
-  if (saved.userId) $('reportUserId').value = saved.userId;
-  if (saved.organization) $('reportOrganization').value = saved.organization;
-  if (saved.className) $('reportClassName').value = saved.className;
-  if (saved.name && $('headerUser')) $('headerUser').textContent = saved.name + ' · ' + ((saved.appMode || 'personal') === 'classroom' ? 'ห้องเรียน' : 'ส่วนบุคคล');
-}
-
-
-document.querySelectorAll('.mode-card').forEach(card => {
-  card.addEventListener('click', () => selectMode(card.dataset.mode));
-});
-
-$('homeNavBtn').addEventListener('click', () => {
-  if (stream) { toast('กรุณากด “สิ้นสุดและบันทึก” ก่อนออกจากหน้าตรวจ'); return; }
-  showScreen('setupScreen');
-});
-$('reportNavBtn').addEventListener('click', openReportScreen);
-$('setupReportBtn').addEventListener('click', openReportScreen);
-$('summaryReportBtn').addEventListener('click', openReportScreen);
-$('loadReportBtn').addEventListener('click', loadReport);
-$('resetReportBtn').addEventListener('click', resetReportFilters);
-$('exportReportBtn').addEventListener('click', exportReportCsv);
-$('printReportBtn').addEventListener('click', () => window.print());
-
-function selectMode(mode) {
-  appMode = mode;
-  document.querySelectorAll('.mode-card').forEach(card => {
-    card.classList.toggle('active', card.dataset.mode === mode);
-  });
-  document.querySelector(`input[name="appMode"][value="${mode}"]`).checked = true;
-  document.querySelectorAll('.personal-field').forEach(el => el.classList.toggle('hidden', mode !== 'personal'));
-  document.querySelectorAll('.classroom-field').forEach(el => el.classList.toggle('hidden', mode !== 'classroom'));
-  $('nameLabel').textContent = mode === 'personal' ? 'ชื่อหรือชื่อเล่น *' : 'ชื่อผู้ควบคุม/ครู *';
-  $('idLabel').textContent = mode === 'personal' ? 'รหัสผู้ใช้งาน *' : 'รหัสการทดลอง/ครู *';
-  $('organization').required = mode === 'classroom';
-  $('className').required = mode === 'classroom';
-  $('cameraFacing').value = mode === 'classroom' ? 'environment' : 'user';
-}
-
-async function handleStart(event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-  const form = $('userForm');
-  if (!form.reportValidity()) return;
-
-  user = {
-    appMode,
-    name: $('name').value.trim(),
-    userId: $('userId').value.trim(),
-    age: $('age').value,
-    role: $('role').value,
-    activityMode: $('activityMode').value,
-    organization: $('organization').value.trim(),
-    className: $('className').value.trim(),
-    expectedPeople: Number($('expectedPeople').value || 0),
-    cameraFacing: $('cameraFacing').value
-  };
-
-  facingMode = user.cameraFacing;
-  if ($('headerUser')) $('headerUser').textContent = user.name + ' · ' + (appMode === 'classroom' ? 'ห้องเรียน' : 'ส่วนบุคคล');
-  if ($('currentModeText')) $('currentModeText').textContent = appMode === 'classroom' ? 'ห้องเรียน' : 'เดี่ยว';
-  localStorage.setItem('smartsitUser', JSON.stringify(user));
-  await beginSession();
-}
-
-$('userForm').addEventListener('submit', handleStart);
-$('startBtn').addEventListener('click', handleStart);
-
-async function beginSession() {
-  loading(true, 'กำลังโหลด AI ครั้งแรกอาจใช้เวลา 10–30 วินาที...');
-  try {
-    await ensureDetector();
-    loading(true, 'กำลังเปิดกล้อง...');
-    await openCamera();
-
-    baseline = null;
-    latestPersonalMetrics = null;
-    stats = resetStats();
-    startedAt = new Date();
-    lastTick = performance.now();
-    badSince = null;
-    lastAlertAt = 0;
-    consecutiveAiErrors = 0;
-    configureMonitor();
-    showScreen('monitorScreen');
-    schedulePrediction();
-  } catch (error) {
-    console.error(error);
-    stopCamera();
-    toast(cameraError(error), 8000);
-    showScreen('setupScreen');
-  } finally {
-    loading(false);
-  }
-}
-
-function configureMonitor() {
-  const classroom = appMode === 'classroom';
-  $('liveLabel').textContent = classroom ? 'LIVE CLASSROOM AI' : 'LIVE PERSONAL AI';
-  $('calibrateBtn').classList.toggle('hidden', classroom);
-  $('controlTitle').textContent = classroom ? 'การตรวจแบบห้องเรียน' : 'ตั้งค่าท่ามาตรฐาน';
-  $('controlText').textContent = classroom
-    ? 'ตั้งกล้องให้เห็นนักเรียนช่วงศีรษะถึงสะโพก ระบบตรวจได้พร้อมกันสูงสุด 6 คนในรุ่นทดลอง'
-    : 'นั่งในท่าที่ถูกต้อง แล้วกดบันทึกท่ามาตรฐาน';
-  $('metricALabel').textContent = classroom ? 'จำนวนที่ตรวจพบ' : 'เวลาท่าดี';
-  $('metricBLabel').textContent = classroom ? 'ควรปรับ' : 'แจ้งเตือน';
-  $('issue1Label').textContent = classroom ? 'นั่งดี' : 'คอยื่น/ก้มหน้า';
-  $('issue2Label').textContent = classroom ? 'ควรปรับ' : 'ลำตัวเอียง/ค่อม';
-  $('issue3Label').textContent = classroom ? 'ตรวจไม่ชัด' : 'ไหล่เอียง';
-  $('cameraMessage').textContent = classroom
-    ? 'จัดกล้องให้เห็นนักเรียนหลายคนและลดการบังกัน'
-    : 'จัดตำแหน่งให้เห็นศีรษะ ไหล่ และสะโพก';
-  updateStatus(classroom ? 'classReady' : 'setup');
-}
-
-async function openCamera() {
-  stopCamera();
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    throw new Error('เบราว์เซอร์นี้ไม่รองรับการเปิดกล้อง กรุณาใช้ Chrome หรือ Edge รุ่นปัจจุบัน');
-  }
-
-  stream = await navigator.mediaDevices.getUserMedia({
-    video: {
-      facingMode: { ideal: facingMode },
-      width: { ideal: appMode === 'classroom' ? 1280 : 960 },
-      height: { ideal: appMode === 'classroom' ? 720 : 720 }
-    },
-    audio: false
-  });
-
-  const video = $('video');
-  video.srcObject = stream;
-  await video.play();
-
-  const mirrored = facingMode === 'user';
-  video.classList.toggle('mirror', mirrored);
-  $('canvas').classList.toggle('mirror', mirrored);
-}
-
-function stopCamera() {
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
-  }
-  if (animationId) cancelAnimationFrame(animationId);
-  animationId = null;
-  inferenceBusy = false;
-}
-
-function cameraError(error) {
-  if (error && error.name === 'NotAllowedError') {
-    return 'กรุณาอนุญาตใช้กล้องที่ไอคอนรูปกล้องข้างแถบที่อยู่ แล้วรีเฟรชหน้าเว็บไซต์';
-  }
-  if (error && error.name === 'NotFoundError') return 'ไม่พบกล้องในอุปกรณ์';
-  if (error && error.name === 'NotReadableError') return 'กล้องกำลังถูกโปรแกรมอื่นใช้งาน กรุณาปิดโปรแกรมกล้องหรือประชุมออนไลน์ก่อน';
-  return 'เปิดระบบไม่สำเร็จ: ' + (error && error.message ? error.message : String(error || 'ไม่ทราบสาเหตุ'));
-}
-
-function schedulePrediction() {
-  if (!stream) return;
-  animationId = requestAnimationFrame(predict);
-}
-
-async function predict(timestamp) {
-  if (!stream) return;
-
-  const video = $('video');
-  if (video.readyState < 2 || inferenceBusy || timestamp - lastInferenceAt < 100) {
-    schedulePrediction();
-    return;
-  }
-
-  inferenceBusy = true;
-  lastInferenceAt = timestamp;
-
-  try {
-    const poses = await detector.estimatePoses(video, {
-      maxPoses: appMode === 'classroom' ? MAX_CLASSROOM_POSES : 1,
-      flipHorizontal: false
-    });
-    consecutiveAiErrors = 0;
-    processResult(poses || [], $('canvas'));
-  } catch (error) {
-    consecutiveAiErrors++;
-    console.error('AI inference error', error);
-    if (consecutiveAiErrors === 3) {
-      toast('ระบบ AI สะดุดชั่วคราว กำลังลองใหม่...');
-    }
-    if (consecutiveAiErrors > 12) {
-      stopCamera();
-      toast('ระบบ AI ทำงานต่อไม่ได้ กรุณารีเฟรชหน้าเว็บแล้วลองใหม่', 8000);
-      showScreen('setupScreen');
-    }
-  } finally {
-    inferenceBusy = false;
-    schedulePrediction();
-  }
-}
-
-function processResult(poses, canvas) {
-  const video = $('video');
-  if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-  }
-
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const visiblePoses = poses
-    .filter(pose => Number(pose.score || averageKeypointScore(pose)) >= 0.12)
-    .sort((a, b) => poseArea(b) - poseArea(a));
-
-  if (appMode === 'classroom') {
-    processClassroom(visiblePoses.slice(0, MAX_CLASSROOM_POSES), ctx, canvas);
-  } else {
-    processPersonal(visiblePoses[0], ctx, canvas);
-  }
-}
-
-function processPersonal(pose, ctx, canvas) {
-  if (!pose) {
-    latestPersonalMetrics = null;
-    tick('unknown');
-    stats.noPoseCount++;
-    updateStatus('unknown');
-    $('cameraMessage').textContent = 'ยังไม่พบร่างกาย ลองถอยกล้องให้เห็นตั้งแต่ศีรษะถึงสะโพก';
-    return;
-  }
-
-  const measured = metrics(pose, canvas);
-  latestPersonalMetrics = measured.valid ? measured : null;
-  const state = !baseline ? 'setup' : previewBad(measured) ? 'bad' : 'good';
-  drawPose(ctx, pose, state);
-
-  if (!measured.valid) {
-    tick('unknown');
-    updateStatus('unknown');
-    $('cameraMessage').textContent = 'จุดศีรษะ ไหล่ หรือสะโพกยังไม่ชัด ลองปรับมุมกล้อง';
-    return;
-  }
-
-  if (!baseline) {
-    tick('unknown');
-    updateStatus('setup');
-    $('cameraMessage').textContent = 'นั่งในท่าที่ถูกต้อง แล้วกด “บันทึกท่ามาตรฐาน”';
-    return;
-  }
-
-  const result = evaluatePersonal(measured);
-  tick(result.isBad ? 'bad' : 'good');
-  $('liveScore').textContent = result.score;
-  $('scoreBar').style.width = result.score + '%';
-  const scoreOrb = document.querySelector('.score-orb');
-  if (scoreOrb) scoreOrb.style.background = `conic-gradient(#45d4a0 ${result.score * 3.6}deg,rgba(255,255,255,.15) 0)`;
-  $('issue1').textContent = result.forward ? 'ควรปรับ' : 'ปกติ';
-  $('issue2').textContent = result.slouch ? 'ควรปรับ' : 'ปกติ';
-  $('issue3').textContent = result.shoulder ? 'ควรปรับ' : 'ปกติ';
-
-  if (result.isBad) {
-    updateStatus('bad', result.issues.join(' · '));
-    $('cameraMessage').textContent = 'คำแนะนำ: ' + result.issues.join(' และ ');
-  } else {
-    updateStatus('good');
-    $('cameraMessage').textContent = 'เยี่ยมมาก รักษาท่านั่งนี้ไว้';
-  }
-}
-
-function processClassroom(poses, ctx, canvas) {
-  let good = 0;
-  let bad = 0;
-  let unclear = 0;
-
-  poses.forEach((pose, index) => {
-    const measured = metrics(pose, canvas);
-    let state = 'unclear';
-
-    if (!measured.valid) {
-      unclear++;
-    } else {
-      const result = evaluateClassroom(measured);
-      state = result.isBad ? 'bad' : 'good';
-      if (result.isBad) bad++;
-      else good++;
-    }
-
-    drawPose(ctx, pose, state);
-    drawPersonLabel(ctx, pose, index + 1, state, canvas);
-  });
-
-  const detected = poses.length;
-  stats.detectedSum += detected;
-  stats.detectedFrames++;
-  stats.maxDetected = Math.max(stats.maxDetected, detected);
-  stats.personObservations += good + bad;
-  stats.goodPersonObservations += good;
-  stats.badPersonObservations += bad;
-
-  const known = good + bad;
-  const badRatio = known ? bad / known : 0;
-  tick(detected === 0 ? 'unknown' : badRatio > Number(config.classroomBadRatioAlert || 0.35) ? 'bad' : 'good');
-
-  const score = known ? Math.round((good / known) * 100) : 0;
-  $('liveScore').textContent = score;
-  $('scoreBar').style.width = score + '%';
-  const scoreOrb = document.querySelector('.score-orb');
-  if (scoreOrb) scoreOrb.style.background = `conic-gradient(#45d4a0 ${score * 3.6}deg,rgba(255,255,255,.15) 0)`;
-  $('metricA').textContent = detected;
-  $('metricB').textContent = bad;
-  $('issue1').textContent = good + ' คน';
-  $('issue2').textContent = bad + ' คน';
-  $('issue3').textContent = unclear + ' คน';
-
-  if (!detected) {
-    updateStatus('classUnknown');
-    $('cameraMessage').textContent = 'ยังไม่พบนักเรียนในภาพ';
-  } else if (badRatio > Number(config.classroomBadRatioAlert || 0.35)) {
-    updateStatus('classBad', `ควรปรับ ${bad} จาก ${known} คน`);
-    $('cameraMessage').textContent = `พบ ${detected} คน · นั่งดี ${good} · ควรปรับ ${bad}`;
-  } else {
-    updateStatus('classGood', `นั่งดี ${good} จาก ${known} คน`);
-    $('cameraMessage').textContent = `พบ ${detected} คน · ภาพรวมท่านั่งดี`;
-  }
-}
-
-function keypointMap(pose) {
-  const result = {};
-  (pose.keypoints || []).forEach(point => {
-    if (point && point.name) result[point.name] = point;
-  });
-  return result;
-}
-
-function visible(point, minimum) {
-  return !!point && Number(point.score || 0) >= minimum;
-}
-
-function normalizedPoint(point, canvas) {
-  return {
-    x: point.x / Math.max(1, canvas.width),
-    y: point.y / Math.max(1, canvas.height),
-    visibility: Number(point.score || 0)
-  };
-}
-
-function midpoint(a, b) {
-  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-}
-
-function distance(a, b) {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function metrics(pose, canvas) {
-  const map = keypointMap(pose);
-  const minimum = Math.max(0.2, Math.min(0.65, Number(config.minVisibility || 0.35)));
-
-  const rawRequired = [map.nose, map.left_shoulder, map.right_shoulder, map.left_hip, map.right_hip];
-  const valid = rawRequired.every(point => visible(point, minimum));
-
-  if (!valid) return { valid: false };
-
-  const nose = normalizedPoint(map.nose, canvas);
-  const leftShoulder = normalizedPoint(map.left_shoulder, canvas);
-  const rightShoulder = normalizedPoint(map.right_shoulder, canvas);
-  const leftHip = normalizedPoint(map.left_hip, canvas);
-  const rightHip = normalizedPoint(map.right_hip, canvas);
-  const shoulderMid = midpoint(leftShoulder, rightShoulder);
-  const hipMid = midpoint(leftHip, rightHip);
-  const torsoHeight = Math.max(0.001, distance(shoulderMid, hipMid));
-
-  const visibleEars = [map.left_ear, map.right_ear]
-    .filter(point => visible(point, minimum * 0.8))
-    .map(point => normalizedPoint(point, canvas));
-  const headPoint = visibleEars.length === 2
-    ? midpoint(visibleEars[0], visibleEars[1])
-    : visibleEars[0] || nose;
-
-  return {
-    valid: true,
-    headHorizontal: (headPoint.x - shoulderMid.x) / torsoHeight,
-    headHeight: (shoulderMid.y - nose.y) / torsoHeight,
-    torsoLean: Math.abs(shoulderMid.x - hipMid.x) / torsoHeight,
-    shoulderTilt: Math.abs(leftShoulder.y - rightShoulder.y) / torsoHeight,
-    torsoHeight
-  };
-}
-
-function evaluatePersonal(measured) {
-  const headShift = Math.abs(measured.headHorizontal - baseline.headHorizontal);
-  const headDrop = baseline.headHeight - measured.headHeight;
-  const leanChange = Math.abs(measured.torsoLean - baseline.torsoLean);
-  const shoulderChange = Math.max(0, measured.shoulderTilt - baseline.shoulderTilt);
-
-  const forwardLimit = Math.max(0.10, Number(config.forwardHeadThreshold || 0.12));
-  const slouchLimit = Math.max(0.10, Number(config.slouchThreshold || 0.12));
-  const shoulderLimit = Math.max(0.06, Number(config.shoulderTiltThreshold || 0.08));
-
-  const forward = headShift > forwardLimit || headDrop > forwardLimit;
-  const slouch = leanChange > slouchLimit;
-  const shoulder = shoulderChange > shoulderLimit;
-
-  if (forward) stats.issueFrames.forward++;
-  if (slouch) stats.issueFrames.slouch++;
-  if (shoulder) stats.issueFrames.shoulder++;
-
-  const issues = [
-    forward && 'ยกศีรษะหรือดึงคอกลับเล็กน้อย',
-    slouch && 'จัดลำตัวให้อยู่กึ่งกลางมากขึ้น',
-    shoulder && 'ปรับระดับไหล่ให้ใกล้เคียงกัน'
-  ].filter(Boolean);
-
-  return {
-    forward,
-    slouch,
-    shoulder,
-    isBad: issues.length > 0,
-    issues,
-    score: Math.max(0, 100 - (forward ? 30 : 0) - (slouch ? 35 : 0) - (shoulder ? 20 : 0))
-  };
-}
-
-function evaluateClassroom(measured) {
-  const headLow = measured.headHeight < 0.48;
-  const torsoLean = measured.torsoLean > 0.24;
-  const shoulderTilt = measured.shoulderTilt > 0.16;
-  return {
-    forward: headLow,
-    slouch: torsoLean,
-    shoulder: shoulderTilt,
-    isBad: headLow || torsoLean || shoulderTilt
-  };
-}
-
-function previewBad(measured) {
-  if (!baseline || !measured.valid) return false;
-  const headShift = Math.abs(measured.headHorizontal - baseline.headHorizontal);
-  const headDrop = baseline.headHeight - measured.headHeight;
-  const leanChange = Math.abs(measured.torsoLean - baseline.torsoLean);
-  const shoulderChange = Math.max(0, measured.shoulderTilt - baseline.shoulderTilt);
-  return headShift > 0.10 || headDrop > 0.10 || leanChange > 0.10 || shoulderChange > 0.06;
-}
-
-function drawPose(ctx, pose, state) {
-  const color = state === 'good' ? '#22c55e' : state === 'bad' ? '#ef4444' : '#a78bfa';
-  const map = keypointMap(pose);
-  ctx.save();
-  ctx.lineWidth = 4;
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = color;
-
-  CONNECTIONS.forEach(([from, to]) => {
-    const a = map[from];
-    const b = map[to];
-    if (!visible(a, 0.22) || !visible(b, 0.22)) return;
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-  });
-
-  (pose.keypoints || []).forEach(point => {
-    if (!visible(point, 0.22)) return;
-    ctx.beginPath();
-    ctx.fillStyle = '#ffffff';
-    ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.fillStyle = color;
-    ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  ctx.restore();
-}
-
-function drawPersonLabel(ctx, pose, number, state, canvas) {
-  const map = keypointMap(pose);
-  const anchor = map.nose || map.left_shoulder || map.right_shoulder;
-  if (!anchor) return;
-  const color = state === 'good' ? '#22c55e' : state === 'bad' ? '#ef4444' : '#a78bfa';
-  const x = Math.max(30, Math.min(canvas.width - 30, anchor.x));
-  const y = Math.max(32, anchor.y - 26);
-
-  ctx.save();
-  ctx.font = 'bold 20px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(15, 12, 20, 0.78)';
-  ctx.fillRect(x - 25, y - 16, 50, 32);
-  ctx.fillStyle = color;
-  ctx.fillText('P' + number, x, y);
-  ctx.restore();
-}
-
-function averageKeypointScore(pose) {
-  const points = pose.keypoints || [];
-  if (!points.length) return 0;
-  return points.reduce((sum, point) => sum + Number(point.score || 0), 0) / points.length;
-}
-
-function poseArea(pose) {
-  if (pose.box && pose.box.width && pose.box.height) return pose.box.width * pose.box.height;
-  const points = (pose.keypoints || []).filter(point => Number(point.score || 0) >= 0.2);
-  if (!points.length) return 0;
-  const xs = points.map(point => point.x);
-  const ys = points.map(point => point.y);
-  return (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys));
-}
-
-function tick(state) {
-  const now = performance.now();
-  const delta = Math.max(0, Math.min(1, (now - lastTick) / 1000));
-  lastTick = now;
-  stats.totalSeconds += delta;
-
-  if (state === 'good') {
-    stats.goodSeconds += delta;
-    badSince = null;
-  } else if (state === 'bad') {
-    stats.badSeconds += delta;
-    if (!badSince) badSince = Date.now();
-    maybeAlert();
-  } else {
-    stats.unknownSeconds += delta;
-    badSince = null;
-  }
-
-  $('sessionTime').textContent = formatTime(stats.totalSeconds);
-  if (appMode === 'personal') {
-    $('metricA').textContent = formatTime(stats.goodSeconds);
-    $('metricB').textContent = stats.alertCount;
-  }
-}
-
-function maybeAlert() {
-  const delay = Number(config.alertDelaySeconds || 8) * 1000;
-  if (badSince && Date.now() - badSince >= delay && Date.now() - lastAlertAt >= delay) {
-    stats.alertCount++;
-    lastAlertAt = Date.now();
-    if (navigator.vibrate) navigator.vibrate([150, 80, 150]);
-    speak(appMode === 'classroom'
-      ? 'มีนักเรียนบางส่วนควรปรับท่านั่งค่ะ'
-      : 'ลองปรับท่านั่งให้ตรงขึ้นอีกนิดนะ');
-  }
-}
-
-function speak(text) {
-  if (!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'th-TH';
-  speechSynthesis.speak(utterance);
-}
-
-function updateStatus(type, detail = '') {
-  const statusMap = {
-    setup: ['🧘', 'ตั้งค่าท่ามาตรฐาน', 'นั่งให้ถูกท่าแล้วกดบันทึก'],
-    good: ['😊', 'ท่านั่งดี', 'รักษาท่านี้ต่อไป'],
-    bad: ['😟', 'ควรปรับท่า', detail],
-    unknown: ['📷', 'ยังตรวจไม่ชัด', 'ให้เห็นศีรษะ ไหล่ และสะโพก'],
-    classReady: ['🏫', 'พร้อมตรวจห้องเรียน', 'จัดตำแหน่งกล้องให้เห็นผู้เรียนหลายคน'],
-    classGood: ['✅', 'ภาพรวมห้องดี', detail],
-    classBad: ['⚠️', 'มีผู้ควรปรับท่า', detail],
-    classUnknown: ['📷', 'ยังไม่พบผู้เรียน', 'ปรับมุมหรือระยะกล้อง']
-  };
-  const status = statusMap[type];
-  $('statusIcon').textContent = status[0];
-  $('statusTitle').textContent = status[1];
-  $('statusDesc').textContent = status[2] || '';
-}
-
-$('calibrateBtn').addEventListener('click', () => {
-  if (!latestPersonalMetrics || !latestPersonalMetrics.valid) {
-    toast('ยังตรวจจุดศีรษะ ไหล่ และสะโพกไม่ชัด กรุณาปรับกล้องก่อน');
-    return;
-  }
-  baseline = {
-    headHorizontal: latestPersonalMetrics.headHorizontal,
-    headHeight: latestPersonalMetrics.headHeight,
-    torsoLean: latestPersonalMetrics.torsoLean,
-    shoulderTilt: latestPersonalMetrics.shoulderTilt
-  };
-  toast('บันทึกท่ามาตรฐานแล้ว');
-  speak('พร้อมแล้ว เริ่มดูแลท่านั่งได้เลย');
-});
-
-$('switchCameraBtn').addEventListener('click', async () => {
-  facingMode = facingMode === 'user' ? 'environment' : 'user';
-  loading(true, 'กำลังสลับกล้อง...');
-  try {
-    await openCamera();
-    baseline = null;
-    latestPersonalMetrics = null;
-    toast('สลับกล้องแล้ว');
-  } catch (error) {
-    toast(cameraError(error));
-  } finally {
-    loading(false);
-  }
-});
-
-$('stopBtn').addEventListener('click', finishSession);
-$('backBtn').addEventListener('click', () => showScreen('setupScreen'));
-$('restartBtn').addEventListener('click', beginSession);
-
-async function finishSession() {
-  stopCamera();
-  loading(true, 'กำลังบันทึกผล...');
-
-  const ended = new Date();
-  const denominator = Math.max(
-    1,
-    appMode === 'classroom'
-      ? stats.personObservations
-      : stats.goodSeconds + stats.badSeconds
-  );
-  const score = Math.round(
-    ((appMode === 'classroom' ? stats.goodPersonObservations : stats.goodSeconds) / denominator) * 100
-  );
-
-  const mainIssue = Object.entries(stats.issueFrames).sort((a, b) => b[1] - a[1])[0];
-  const issueNames = {
-    forward: 'คอยื่นหรือก้มหน้า',
-    slouch: 'ลำตัวเอียงหรือค่อม',
-    shoulder: 'ไหล่เอียง'
-  };
-
-  const payload = {
-    ...user,
-    sessionId: window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-    totalSeconds: Math.round(stats.totalSeconds),
-    goodSeconds: Math.round(stats.goodSeconds),
-    badSeconds: Math.round(stats.badSeconds),
-    unknownSeconds: Math.round(stats.unknownSeconds),
-    score,
-    alertCount: stats.alertCount,
-    mainIssue: mainIssue && mainIssue[1] > 0 ? issueNames[mainIssue[0]] : 'ไม่พบปัญหาเด่น',
-    forwardHeadCount: stats.issueFrames.forward,
-    slouchCount: stats.issueFrames.slouch,
-    shoulderTiltCount: stats.issueFrames.shoulder,
-    noPoseCount: stats.noPoseCount,
-    averageDetected: stats.detectedFrames
-      ? Number((stats.detectedSum / stats.detectedFrames).toFixed(1))
-      : 0,
-    maxDetected: stats.maxDetected,
-    personObservations: stats.personObservations,
-    goodPersonObservations: stats.goodPersonObservations,
-    badPersonObservations: stats.badPersonObservations,
-    startedAt: startedAt ? startedAt.toISOString() : '',
-    endedAt: ended.toISOString(),
-    device: navigator.userAgent.slice(0, 200),
-    cameraFacing: facingMode
-  };
-
-  try {
-    await serverCall('saveSession', payload);
-    renderSummary(payload);
-    showScreen('summaryScreen');
-    await loadHistory();
-    toast('บันทึกผลลง Google Sheets แล้ว');
-  } catch (error) {
-    console.error(error);
-    renderSummary(payload);
-    showScreen('summaryScreen');
-    toast('แสดงผลได้ แต่บันทึกไม่สำเร็จ: ' + (error.message || error));
-  } finally {
-    loading(false);
-  }
-}
-
-function renderSummary(payload) {
-  const classroom = payload.appMode === 'classroom';
-  $('summaryTitle').textContent = classroom ? 'สรุปผลการตรวจห้องเรียน' : 'สรุปผลการตรวจส่วนบุคคล';
-  $('summaryName').textContent = classroom
-    ? `${payload.organization} · ${payload.className} · ผู้ควบคุม ${payload.name}`
-    : `${payload.name} · ${payload.activityMode}`;
-  $('finalScore').textContent = payload.score;
-  $('scoreCircle').style.background = `conic-gradient(var(--p) ${payload.score * 3.6}deg,#ede9f5 0)`;
-  $('finalMessage').textContent = payload.score >= 90
-    ? 'ยอดเยี่ยมมาก!'
-    : payload.score >= 75
-      ? 'ภาพรวมอยู่ในระดับดี'
-      : 'ควรปรับตำแหน่งกล้องและฝึกท่านั่งต่อเนื่อง';
-  $('sumTotal').textContent = formatMinutes(payload.totalSeconds);
-  $('sumGood').textContent = classroom ? payload.averageDetected + ' คน' : formatMinutes(payload.goodSeconds);
-  $('sumBad').textContent = classroom ? payload.maxDetected + ' คน' : formatMinutes(payload.badSeconds);
-  $('sumAlerts').textContent = classroom ? payload.badPersonObservations : payload.alertCount;
-  $('sumGoodLabel').textContent = classroom ? 'พบเฉลี่ย' : 'นั่งถูกท่า';
-  $('sumBadLabel').textContent = classroom ? 'พบสูงสุด' : 'ควรปรับท่า';
-  $('sumAlertLabel').textContent = classroom ? 'การตรวจพบที่ควรปรับ' : 'แจ้งเตือน';
-  $('summaryMainIssue').textContent = payload.mainIssue || 'ไม่พบปัญหาเด่น';
-  $('summaryStarted').textContent = payload.startedAt ? new Date(payload.startedAt).toLocaleString('th-TH') : '–';
-  $('summaryEnded').textContent = payload.endedAt ? new Date(payload.endedAt).toLocaleString('th-TH') : '–';
-}
-
-async function loadHistory() {
-  try {
-    const data = await serverCall('getDashboard', user.userId, appMode);
-    const rows = data.sessions || [];
-    $('history').innerHTML = '<h3>ประวัติล่าสุด</h3>' + rows.slice(0, 5).map(row => `
-      <div class="history-row">
-        <span>${new Date(row.SavedAt).toLocaleString('th-TH')}</span>
-        <b>${row.Score} คะแนน</b>
-        <span>${formatMinutes(row.TotalSeconds)}</span>
-        <span>${escapeHtml(row.MainIssue || '')}</span>
-      </div>
-    `).join('');
-
-    const labels = rows.slice(0, 10).reverse().map(row =>
-      new Date(row.SavedAt).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })
-    );
-    const scores = rows.slice(0, 10).reverse().map(row => Number(row.Score));
-
-    if (chart) chart.destroy();
-    chart = new Chart($('historyChart'), {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{ label: 'คะแนน', data: scores, tension: 0.35, fill: true }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { min: 0, max: 100 } },
-        plugins: { legend: { display: false } }
-      }
-    });
-  } catch (error) {
-    console.warn(error);
-  }
-}
-
-
-function openReportScreen() {
-  if (stream) {
-    toast('กรุณากด “สิ้นสุดและบันทึก” ก่อนเปิดรายงาน');
-    return;
-  }
-  const saved = JSON.parse(localStorage.getItem('smartsitUser') || '{}');
-  if (!$('reportUserId').value && (user.userId || saved.userId)) $('reportUserId').value = user.userId || saved.userId;
-  if (!$('reportOrganization').value && (user.organization || saved.organization)) $('reportOrganization').value = user.organization || saved.organization;
-  if (!$('reportClassName').value && (user.className || saved.className)) $('reportClassName').value = user.className || saved.className;
-  if (appMode) $('reportMode').value = appMode;
-  showScreen('reportScreen');
-  if ($('reportUserId').value.trim()) loadReport();
-}
-
-function resetReportFilters() {
-  $('reportMode').value = 'all';
-  $('reportOrganization').value = '';
-  $('reportClassName').value = '';
-  $('reportDateFrom').value = '';
-  $('reportDateTo').value = '';
-}
-
-async function loadReport() {
-  const filters = {
-    userId: $('reportUserId').value.trim(),
-    appMode: $('reportMode').value,
-    organization: $('reportOrganization').value.trim(),
-    className: $('reportClassName').value.trim(),
-    dateFrom: $('reportDateFrom').value,
-    dateTo: $('reportDateTo').value
-  };
-  if (!filters.userId) {
-    toast('กรุณากรอกรหัสผู้ใช้งานหรือรหัสครู');
-    $('reportUserId').focus();
-    return;
-  }
-  if (filters.dateFrom && filters.dateTo && filters.dateFrom > filters.dateTo) {
-    toast('วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด');
-    return;
-  }
-
-  loading(true, 'กำลังโหลดรายงานผล...');
-  try {
-    const data = await serverCall('getReportData', filters);
-    reportRows = data.sessions || [];
-    renderReport(data.summary || {}, reportRows, filters.appMode);
-  } catch (error) {
-    console.error(error);
-    toast('โหลดรายงานไม่สำเร็จ: ' + (error.message || error));
-  } finally {
-    loading(false);
-  }
-}
-
-function renderReport(summary, rows, mode) {
-  $('reportSessions').textContent = Number(summary.sessionCount || 0).toLocaleString('th-TH');
-  $('reportAvgScore').textContent = Number(summary.averageScore || 0).toLocaleString('th-TH');
-  $('reportTotalTime').textContent = formatMinutes(summary.totalSeconds || 0);
-  $('reportGoodRate').textContent = Number(summary.goodRate || 0) + '%';
-  $('reportAttention').textContent = Number(summary.attentionCount || 0).toLocaleString('th-TH');
-  $('reportLatest').textContent = summary.latestSavedAt
-    ? new Date(summary.latestSavedAt).toLocaleDateString('th-TH', {day:'2-digit',month:'short',year:'numeric'})
-    : '–';
-  $('reportGoodLabel').textContent = mode === 'classroom' ? 'สัดส่วนนักเรียนท่าดี' : mode === 'personal' ? 'สัดส่วนเวลาท่าดี' : 'สัดส่วนผลท่าดี';
-  $('reportResultCount').textContent = `พบ ${rows.length.toLocaleString('th-TH')} รายการ`;
-
-  if (!rows.length) {
-    $('reportTableBody').innerHTML = '<tr><td colspan="10" class="empty-report">ไม่พบข้อมูลตามตัวกรองนี้</td></tr>';
-  } else {
-    $('reportTableBody').innerHTML = rows.map(row => {
-      const classroom = String(row.AppMode) === 'classroom';
-      const score = Number(row.Score || 0);
-      const scoreClass = score >= 85 ? 'score-high' : score >= 70 ? 'score-mid' : 'score-low';
-      const subject = classroom
-        ? `${escapeHtml(row.Organization || '–')}<br><span class="note">ผู้ควบคุม ${escapeHtml(row.Name || '–')}</span>`
-        : `${escapeHtml(row.Name || '–')}<br><span class="note">รหัส ${escapeHtml(row.UserID || '–')}</span>`;
-      const context = classroom ? escapeHtml(row.ClassName || '–') : escapeHtml(row.ActivityMode || '–');
-      const good = classroom
-        ? `${Number(row.GoodPersonObservations || 0).toLocaleString('th-TH')} ครั้งตรวจพบ`
-        : formatMinutes(row.GoodSeconds || 0);
-      const bad = classroom
-        ? `${Number(row.BadPersonObservations || 0).toLocaleString('th-TH')} ครั้งตรวจพบ`
-        : formatMinutes(row.BadSeconds || 0);
-      const attention = classroom
-        ? Number(row.BadPersonObservations || 0).toLocaleString('th-TH')
-        : Number(row.AlertCount || 0).toLocaleString('th-TH');
-      const details = classroom
-        ? `พบเฉลี่ย ${Number(row.AverageDetected || 0).toFixed(1)} คน · สูงสุด ${Number(row.MaxDetected || 0)} คน`
-        : escapeHtml(row.MainIssue || 'ไม่พบปัญหาเด่น');
-      return `<tr>
-        <td>${formatDateTime(row.SavedAt)}</td>
-        <td><span class="mode-badge ${classroom ? 'mode-classroom' : 'mode-personal'}">${classroom ? 'ห้องเรียน' : 'ส่วนบุคคล'}</span></td>
-        <td>${subject}</td><td>${context}</td><td>${formatMinutes(row.TotalSeconds || 0)}</td>
-        <td><span class="score-badge ${scoreClass}">${score}</span></td><td>${good}</td><td>${bad}</td><td>${attention}</td><td>${details}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  renderReportCharts(rows, summary, mode);
-}
-
-function renderReportCharts(rows, summary, mode) {
-  const chronological = rows.slice().reverse();
-  const labels = chronological.map(row => new Date(row.SavedAt).toLocaleDateString('th-TH', {day:'2-digit',month:'short'}));
-  const scores = chronological.map(row => Number(row.Score || 0));
-  if (reportScoreChart) reportScoreChart.destroy();
-  reportScoreChart = new Chart($('reportScoreChart'), {
-    type:'line',
-    data:{labels,datasets:[{label:'คะแนน',data:scores,tension:.35,fill:true}]},
-    options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:100}},plugins:{legend:{display:false}}}
-  });
-
-  let statusLabels, statusData;
-  if (mode === 'personal') {
-    statusLabels = ['เวลาท่าดี','เวลาควรปรับ','ตรวจไม่ชัด'];
-    statusData = [Number(summary.goodUnits || 0),Number(summary.badUnits || 0),Number(summary.unknownUnits || 0)];
-    $('reportStatusTitle').textContent = 'สัดส่วนเวลาท่านั่ง';
-    $('reportStatusDesc').textContent = 'รวมเวลาท่าดี ท่าที่ควรปรับ และช่วงตรวจไม่ชัด';
-  } else if (mode === 'classroom') {
-    statusLabels = ['นักเรียนท่าดี','นักเรียนควรปรับ'];
-    statusData = [Number(summary.goodUnits || 0),Number(summary.badUnits || 0)];
-    $('reportStatusTitle').textContent = 'สัดส่วนผลตรวจในห้องเรียน';
-    $('reportStatusDesc').textContent = 'รวมการตรวจพบของนักเรียนหลายคนตลอดช่วงทดลอง';
-  } else {
-    statusLabels = ['คะแนนตั้งแต่ 75','คะแนนต่ำกว่า 75'];
-    statusData = [rows.filter(row => Number(row.Score || 0) >= 75).length,rows.filter(row => Number(row.Score || 0) < 75).length];
-    $('reportStatusTitle').textContent = 'ระดับผลการตรวจแต่ละครั้ง';
-    $('reportStatusDesc').textContent = 'เปรียบเทียบจำนวนครั้งที่ได้คะแนนตั้งแต่ 75 กับต่ำกว่า 75';
-  }
-  if (reportStatusChart) reportStatusChart.destroy();
-  reportStatusChart = new Chart($('reportStatusChart'), {
-    type:'doughnut',data:{labels:statusLabels,datasets:[{data:statusData}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
-  });
-}
-
-function exportReportCsv() {
-  if (!reportRows.length) { toast('ยังไม่มีข้อมูลสำหรับส่งออก'); return; }
-  const headers = ['วันที่เวลา','โหมด','รหัส','ชื่อ','อายุ','กลุ่มผู้ใช้','กิจกรรม','โรงเรียน/สถานที่','ชั้น/ห้อง','เวลารวม(วินาที)','ท่าดี(วินาที)','ควรปรับ(วินาที)','คะแนน','แจ้งเตือน','ปัญหาหลัก','พบเฉลี่ย(คน)','พบสูงสุด(คน)','ตรวจพบท่าดี','ตรวจพบควรปรับ'];
-  const lines = [headers].concat(reportRows.map(row => [
-    formatDateTime(row.SavedAt),row.AppMode === 'classroom' ? 'ห้องเรียน' : 'ส่วนบุคคล',row.UserID,row.Name,row.Age,row.Role,row.ActivityMode,row.Organization,row.ClassName,row.TotalSeconds,row.GoodSeconds,row.BadSeconds,row.Score,row.AlertCount,row.MainIssue,row.AverageDetected,row.MaxDetected,row.GoodPersonObservations,row.BadPersonObservations
-  ])).map(values => values.map(csvCell).join(','));
-  const blob = new Blob(['\ufeff' + lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `SmartSit_Report_${$('reportUserId').value.trim()}_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
-}
-
-function csvCell(value) {
-  let text = String(value == null ? '' : value);
-  if (/^[=+\-@]/.test(text)) text = "'" + text;
-  return '"' + text.replace(/"/g, '""') + '"';
-}
-
-function formatDateTime(value) {
-  const date = new Date(value);
-  return isNaN(date.getTime()) ? '–' : date.toLocaleString('th-TH');
-}
-
-function formatTime(seconds) {
-  const rounded = Math.max(0, Math.round(seconds));
-  return String(Math.floor(rounded / 60)).padStart(2, '0') + ':' + String(rounded % 60).padStart(2, '0');
-}
-
-function formatMinutes(seconds) {
-  return (Number(seconds || 0) / 60).toFixed(1) + ' นาที';
-}
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>'"]/g, character => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-  })[character]);
-}
-
-window.addEventListener('beforeunload', stopCamera);
+$$('.angle-option').forEach(el=>el.addEventListener('click',()=>selectCameraAngle(el.dataset.angle)));
+
+function collectUserData(){return{appMode,name:$('name').value.trim(),userId:$('userId').value.trim(),age:$('age').value,role:appMode==='personal'?$('role').value:'ครู/ผู้ควบคุม',activityMode:$('activityMode').value,organization:$('organization').value.trim(),className:$('className').value.trim(),expectedPeople:Number($('expectedPeople').value||0),deviceType:$('deviceType').value,cameraType:$('cameraFacing').value==='user'?'กล้องหน้า':'กล้องหลัง',cameraFacing:$('cameraFacing').value,cameraAngle:$('cameraAngle').value,resolution:$('resolution').value,sensitivity:$('sensitivity').value};}
+function applySavedUser(){const saved=JSON.parse(localStorage.getItem('smartsitUser')||'{}');['name','userId','age','organization','className','expectedPeople'].forEach(k=>{if(saved[k]&&$(k))$(k).value=saved[k]});if(saved.role)$('role').value=saved.role;if(saved.activityMode)$('activityMode').value=saved.activityMode;selectMode(saved.appMode||'personal');}
+
+function loadLocalSettings(){try{localSettings={...DEFAULT_SETTINGS,...JSON.parse(localStorage.getItem('smartsitSettings')||'{}')}}catch{localSettings={...DEFAULT_SETTINGS}}$('setDeviceType').value=localSettings.deviceType;$('setFacing').value=localSettings.facingMode;$('setAngle').value=localSettings.cameraAngle;$('setResolution').value=localSettings.resolution;$('setSensitivity').value=localSettings.sensitivity;$('setSound').value=localSettings.soundEnabled?'on':'off';$('setVolume').value=localSettings.volume;$('setRate').value=localSettings.speechRate;$('volumeValue').textContent=Number(localSettings.volume).toFixed(1);$('rateValue').textContent=Number(localSettings.speechRate).toFixed(1);$('deviceType').value=localSettings.deviceType;$('cameraFacing').value=localSettings.facingMode;selectCameraAngle(localSettings.cameraAngle);$('resolution').value=localSettings.resolution;$('sensitivity').value=localSettings.sensitivity;}
+function saveLocalSettings(){localSettings={deviceType:$('setDeviceType').value,facingMode:$('setFacing').value,cameraAngle:$('setAngle').value,resolution:$('setResolution').value,sensitivity:$('setSensitivity').value,soundEnabled:$('setSound').value==='on',volume:Number($('setVolume').value),speechRate:Number($('setRate').value),deviceId:$('cameraDevice').value};localStorage.setItem('smartsitSettings',JSON.stringify(localSettings));$('deviceType').value=localSettings.deviceType;$('cameraFacing').value=localSettings.facingMode;selectCameraAngle(localSettings.cameraAngle);$('resolution').value=localSettings.resolution;$('sensitivity').value=localSettings.sensitivity;showToast('บันทึกการตั้งค่าในอุปกรณ์นี้แล้ว');}
+$('saveSettingsBtn').addEventListener('click',saveLocalSettings);$('setVolume').addEventListener('input',e=>$('volumeValue').textContent=Number(e.target.value).toFixed(1));$('setRate').addEventListener('input',e=>$('rateValue').textContent=Number(e.target.value).toFixed(1));
+
+async function loadScriptFallback(urls,label){let lastError;for(const url of urls){try{await new Promise((resolve,reject)=>{const existing=[...document.scripts].find(s=>s.src===url);if(existing&&existing.dataset.loaded==='1')return resolve();const s=document.createElement('script');s.src=url;s.async=true;s.onload=()=>{s.dataset.loaded='1';resolve()};s.onerror=()=>reject(new Error('โหลด '+label+' ไม่สำเร็จ'));document.head.appendChild(s)});return;}catch(err){lastError=err}}throw lastError||new Error('โหลด '+label+' ไม่สำเร็จ');}
+async function ensureLibraries(){setLoading(true,'กำลังโหลดระบบ AI...',12,'ครั้งแรกอาจใช้เวลา 10–30 วินาที');if(!window.Chart){await loadScriptFallback(['https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js','https://unpkg.com/chart.js@4.4.7/dist/chart.umd.min.js'],'Chart.js')}setLoading(true,'กำลังโหลด TensorFlow.js...',35);if(!window.tf){await loadScriptFallback(['https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js','https://unpkg.com/@tensorflow/tfjs@4.22.0/dist/tf.min.js'],'TensorFlow.js')}setLoading(true,'กำลังโหลดโมเดลตรวจท่าทาง...',58);if(!window.poseDetection){await loadScriptFallback(['https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js','https://unpkg.com/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js'],'Pose Detection')}await tf.ready();try{await tf.setBackend('webgl');await tf.ready()}catch(e){console.warn('WebGL unavailable',e)}if(!detector){setLoading(true,'กำลังเตรียม MoveNet MultiPose...',78);const detectorConfig={modelType:poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,enableTracking:true,minPoseScore:.15,multiPoseMaxDimension:256};if(poseDetection.TrackerType?.BoundingBox)detectorConfig.trackerType=poseDetection.TrackerType.BoundingBox;detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,detectorConfig);}detectorReady=true;$('readyAi').textContent='พร้อม';setLoading(true,'AI พร้อมใช้งาน',100);}
+
+async function enumerateCameras(){if(!navigator.mediaDevices?.enumerateDevices)return;const devices=await navigator.mediaDevices.enumerateDevices();const cameras=devices.filter(d=>d.kind==='videoinput');const select=$('cameraDevice');const current=localSettings.deviceId;select.innerHTML='<option value="">เลือกอัตโนมัติ</option>'+cameras.map((d,i)=>`<option value="${escapeHtml(d.deviceId)}">${escapeHtml(d.label||'กล้อง '+(i+1))}</option>`).join('');if(current&&cameras.some(c=>c.deviceId===current))select.value=current;const selected=cameras.find(c=>c.deviceId===select.value);$('setCameraName').textContent=selected?.label||'อัตโนมัติ';}
+function videoConstraints(settings=localSettings){const height=String(settings.resolution)==='480'?480:720;const width=height===480?854:1280;const video={width:{ideal:width},height:{ideal:height}};if(settings.deviceId)video.deviceId={exact:settings.deviceId};else video.facingMode={ideal:settings.facingMode||'user'};return{video,audio:false};}
+async function openStream(targetVideo,settings=localSettings){if(!navigator.mediaDevices?.getUserMedia)throw new Error('เบราว์เซอร์นี้ไม่รองรับการเปิดกล้อง กรุณาใช้ Chrome, Safari หรือ Edge รุ่นปัจจุบัน');const media=await navigator.mediaDevices.getUserMedia(videoConstraints(settings));targetVideo.srcObject=media;await targetVideo.play();await enumerateCameras();return media;}
+function cameraError(error){if(error?.name==='NotAllowedError')return'ยังไม่ได้อนุญาตใช้กล้อง กรุณากดไอคอนกล้องข้างแถบที่อยู่แล้วเลือกอนุญาต';if(error?.name==='NotFoundError')return'ไม่พบกล้องในอุปกรณ์';if(error?.name==='NotReadableError')return'กล้องกำลังถูกโปรแกรมอื่นใช้งาน กรุณาปิดแอปกล้องหรือประชุมออนไลน์ก่อน';if(error?.name==='OverconstrainedError')return'กล้องไม่รองรับค่าที่เลือก กรุณาเปลี่ยนความละเอียดหรือเลือกอัตโนมัติ';return error?.message||String(error);}
+
+async function startFromForm(){const form=$('setupForm');if(!form.reportValidity())return;userData=collectUserData();localStorage.setItem('smartsitUser',JSON.stringify(userData));localSettings={...localSettings,deviceType:userData.deviceType,facingMode:userData.cameraFacing,cameraAngle:userData.cameraAngle,resolution:userData.resolution,sensitivity:userData.sensitivity};localStorage.setItem('smartsitSettings',JSON.stringify(localSettings));setLoading(true,'กำลังเปิดระบบ...',5);try{await ensureLibraries();setLoading(true,'กำลังขอสิทธิ์เปิดกล้อง...',92);await openMainCamera();configureMonitor();showScreen('monitorScreen');setLoading(false);try{await serverCall('saveOrUpdateUser',userData)}catch(e){console.warn('save user failed',e)}}catch(error){setLoading(false);stopMainCamera();showToast('เปิดระบบไม่สำเร็จ: '+cameraError(error),8000);}}
+$('startCameraBtn').addEventListener('click',startFromForm);
+
+async function openMainCamera(){stopMainCamera(false);stream=await openStream($('video'),localSettings);const mirror=(localSettings.facingMode==='user');$('video').classList.toggle('mirror',mirror);$('overlay').classList.toggle('mirror',mirror);sessionState='ready';baseline=null;baselineCapture=null;stats=resetStats();resetTrackers();eventLog=[];startedAt=null;sessionId=uuid('SS');lastFrameAt=performance.now();lastInferenceAt=0;fpsSamples=[];$('baselineBtn').classList.toggle('hidden',appMode==='classroom');$('runBtn').disabled=appMode==='personal';$('finishBtn').disabled=true;$('pauseBtn').classList.add('hidden');$('resumeBtn').classList.add('hidden');$('runBtn').classList.remove('hidden');$('baselineBtn').disabled=false;$('liveLabel').textContent='CAMERA READY';startPredictionLoop();}
+function stopMainCamera(reset=true){if(animationId)cancelAnimationFrame(animationId);animationId=null;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}inferenceBusy=false;if(reset){sessionState='idle';const ctx=$('overlay').getContext('2d');ctx.clearRect(0,0,$('overlay').width,$('overlay').height);}}
+$('stopCameraBtn').addEventListener('click',()=>{stopMainCamera();showToast('หยุดกล้องแล้ว');showScreen('setupScreen')});
+
+function configureMonitor(){const classroom=appMode==='classroom';$('monitorModeBadge').textContent=classroom?'โหมดห้องเรียน':'โหมดส่วนบุคคล';$('monitorHeading').textContent=classroom?'ตรวจภาพรวมห้องเรียน':'ตรวจท่านั่งแบบเรียลไทม์';$('monitorSubheading').textContent=classroom?'ระบบแสดง P1, P2, P3 โดยไม่ระบุตัวตนนักเรียน':'บันทึกท่ามาตรฐานก่อนเริ่ม เพื่อช่วยลดความคลาดเคลื่อนจากมุมกล้อง';$('cameraMessage').textContent=classroom?'จัดกล้องให้เห็นผู้เรียนตั้งแต่ศีรษะถึงเข่า และลดการบังกัน':localSettings.cameraAngle==='side'?'มุมด้านข้าง: ถอยกล้องให้เห็นเต็มตัวตั้งแต่ศีรษะถึงข้อเท้า':'จัดกล้องให้เห็นศีรษะ ไหล่ ศอก สะโพก และเข่า';$('runBtn').textContent=classroom?'เริ่มตรวจห้องเรียน':'เริ่มตรวจ';$('soundBtn').textContent=localSettings.soundEnabled?'🔊 เปิดเสียง':'🔇 ปิดเสียง';updateStatus('ready','ตรวจความพร้อมของภาพก่อนเริ่ม');}
+function startPredictionLoop(){if(!stream)return;animationId=requestAnimationFrame(predictFrame);}
+async function predictFrame(timestamp){if(!stream)return;animationId=requestAnimationFrame(predictFrame);const video=$('video');if(video.readyState<2||inferenceBusy||timestamp-lastInferenceAt<100)return;inferenceBusy=true;lastInferenceAt=timestamp;try{const poses=await detector.estimatePoses(video,{maxPoses:appMode==='classroom'?MAX_CLASSROOM_POSES:1,flipHorizontal:false});lastPoseResult=poses||[];updateFps(timestamp);processPoses(lastPoseResult,timestamp);}catch(error){console.error(error);$('cameraMessage').textContent='AI สะดุดชั่วคราว กำลังลองใหม่';}finally{inferenceBusy=false;}}
+function updateFps(timestamp){if(lastFrameAt){const fps=1000/Math.max(1,timestamp-lastFrameAt);fpsSamples.push(fps);if(fpsSamples.length>20)fpsSamples.shift();currentFps=Math.round(fpsSamples.reduce((a,b)=>a+b,0)/fpsSamples.length);$('fpsChip').textContent='FPS '+currentFps;}lastFrameAt=timestamp;}
+
+function keypointMap(pose){const map={};(pose?.keypoints||[]).forEach(p=>{if(p?.name)map[p.name]=p});return map;}
+function visible(p,min=.28){return!!p&&Number(p.score||0)>=min;}
+function calculateDistance(a,b){return a&&b?Math.hypot(a.x-b.x,a.y-b.y):NaN;}
+function calculateMidpoint(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};}
+function calculateAngle(a,b,c){if(!a||!b||!c)return NaN;const ab={x:a.x-b.x,y:a.y-b.y},cb={x:c.x-b.x,y:c.y-b.y};const dot=ab.x*cb.x+ab.y*cb.y;const mag=Math.hypot(ab.x,ab.y)*Math.hypot(cb.x,cb.y);if(!mag)return NaN;return Math.acos(clamp(dot/mag,-1,1))*180/Math.PI;}
+function lineAngle(a,b){if(!a||!b)return NaN;return Math.abs(Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI);}
+function angleFromHorizontal(a,b){let angle=lineAngle(a,b);if(angle>90)angle=180-angle;return angle;}
+function angleFromVertical(a,b){if(!a||!b)return NaN;return Math.abs(Math.atan2(b.x-a.x,b.y-a.y)*180/Math.PI);}
+function average(values){const valid=values.filter(Number.isFinite);return valid.length?valid.reduce((a,b)=>a+b,0)/valid.length:NaN;}
+function calculateConfidence(pose,keys){const map=keypointMap(pose);const vals=keys.map(k=>Number(map[k]?.score||0));return vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);}
+
+function evaluateVisibility(pose,angle=localSettings.cameraAngle){const map=keypointMap(pose);let required;if(angle==='side'){const left=['nose','left_ear','left_shoulder','left_elbow','left_wrist','left_hip','left_knee','left_ankle'];const right=['nose','right_ear','right_shoulder','right_elbow','right_wrist','right_hip','right_knee','right_ankle'];const lc=calculateConfidence(pose,left),rc=calculateConfidence(pose,right);required=lc>=rc?left:right;}else if(angle==='diagonal'){required=['nose','left_shoulder','right_shoulder','left_elbow','right_elbow','left_hip','right_hip','left_knee','right_knee'];}else required=['nose','left_shoulder','right_shoulder','left_elbow','right_elbow','left_hip','right_hip','left_knee','right_knee'];const missing=required.filter(k=>!visible(map[k],.25));const confidence=calculateConfidence(pose,required);const allowedMissing=angle==='side'?1:Math.max(1,Math.floor(required.length*.22));return{valid:missing.length<=allowedMissing&&confidence>=.35,missing,confidence,required};}
+function bodyMetrics(pose,canvas){const map=keypointMap(pose),vis=evaluateVisibility(pose);if(!vis.valid)return{valid:false,visibility:vis};const ls=map.left_shoulder,rs=map.right_shoulder,lh=map.left_hip,rh=map.right_hip,nose=map.nose;const shoulderMid=visible(ls)&&visible(rs)?calculateMidpoint(ls,rs):(ls||rs);const hipMid=visible(lh)&&visible(rh)?calculateMidpoint(lh,rh):(lh||rh);if(!shoulderMid||!hipMid||!nose)return{valid:false,visibility:vis};const torsoHeight=Math.max(1,calculateDistance(shoulderMid,hipMid));const shoulderWidth=visible(ls)&&visible(rs)?calculateDistance(ls,rs):torsoHeight*.55;const eyeAngle=visible(map.left_eye)&&visible(map.right_eye)?angleFromHorizontal(map.left_eye,map.right_eye):NaN;const earAngle=visible(map.left_ear)&&visible(map.right_ear)?angleFromHorizontal(map.left_ear,map.right_ear):NaN;const headTilt=average([eyeAngle,earAngle]);const shoulderTilt=visible(ls)&&visible(rs)?angleFromHorizontal(ls,rs):NaN;const torsoLean=angleFromVertical(shoulderMid,hipMid);const leftElbow=visible(map.left_shoulder)&&visible(map.left_elbow)&&visible(map.left_wrist)?calculateAngle(map.left_shoulder,map.left_elbow,map.left_wrist):NaN;const rightElbow=visible(map.right_shoulder)&&visible(map.right_elbow)&&visible(map.right_wrist)?calculateAngle(map.right_shoulder,map.right_elbow,map.right_wrist):NaN;const leftKnee=visible(map.left_hip)&&visible(map.left_knee)&&visible(map.left_ankle)?calculateAngle(map.left_hip,map.left_knee,map.left_ankle):NaN;const rightKnee=visible(map.right_hip)&&visible(map.right_knee)&&visible(map.right_ankle)?calculateAngle(map.right_hip,map.right_knee,map.right_ankle):NaN;const leftUpper=visible(map.left_elbow)&&visible(ls)&&visible(lh)?calculateAngle(map.left_elbow,ls,lh):NaN;const rightUpper=visible(map.right_elbow)&&visible(rs)&&visible(rh)?calculateAngle(map.right_elbow,rs,rh):NaN;const headHorizontal=(nose.x-shoulderMid.x)/torsoHeight;const headHeight=(shoulderMid.y-nose.y)/torsoHeight;const scale=shoulderWidth/Math.max(1,canvas.width);const bodyHeight=poseBox(pose).height/Math.max(1,canvas.height);return{valid:true,visibility:vis,headTilt:Number.isFinite(headTilt)?headTilt:0,shoulderTilt:Number.isFinite(shoulderTilt)?shoulderTilt:0,torsoLean:Number.isFinite(torsoLean)?torsoLean:0,leftElbow,rightElbow,leftKnee,rightKnee,leftUpper,rightUpper,headHorizontal,headHeight,torsoHeight,shoulderWidth,scale,bodyHeight,confidence:vis.confidence};}
+function compareWithBaseline(metrics){if(!baseline)return{};return{headShift:Math.abs(metrics.headHorizontal-baseline.headHorizontal),headDrop:baseline.headHeight-metrics.headHeight,torsoLeanDelta:Math.abs(metrics.torsoLean-baseline.torsoLean),torsoHeightDrop:(baseline.torsoHeight-metrics.torsoHeight)/Math.max(1,baseline.torsoHeight),shoulderDelta:Math.max(0,metrics.shoulderTilt-baseline.shoulderTilt),scaleRatio:metrics.shoulderWidth/Math.max(1,baseline.shoulderWidth)};}
+function inRange(value,min,max){return!Number.isFinite(value)||(value>=min&&value<=max);}
+function evaluatePosture(metrics,isClassroom=false){const t=SENSITIVITY[localSettings.sensitivity||'medium'];if(!metrics.valid)return{state:'unknown',score:0,issues:{},details:[]};const d=compareWithBaseline(metrics);const issues={};if(metrics.headTilt>t.headTilt)issues.headTilt={value:metrics.headTilt,text:`ศีรษะเอียง ${Math.round(metrics.headTilt)}°`};if(metrics.shoulderTilt>t.shoulderTilt||(baseline&&d.shoulderDelta>t.shoulderTilt*.55))issues.shoulderTilt={value:metrics.shoulderTilt,text:`แนวไหล่เอียง ${Math.round(metrics.shoulderTilt)}°`};if((baseline&&(d.headShift>t.forwardDelta||d.headDrop>t.headDrop))||(!baseline&&Math.abs(metrics.headHorizontal)>.30))issues.forwardHead={value:d.headShift||Math.abs(metrics.headHorizontal),text:'ศีรษะยื่นหรือก้มมากกว่าท่ามาตรฐาน'};if((baseline&&(d.torsoLeanDelta>t.slouchDelta||d.torsoHeightDrop>t.slouchDelta))||metrics.torsoLean>t.torsoLean)issues.slouch={value:metrics.torsoLean,text:`ลำตัวโน้มประมาณ ${Math.round(metrics.torsoLean)}°`};const elbows=[metrics.leftElbow,metrics.rightElbow].filter(Number.isFinite);if(elbows.length&&!elbows.every(v=>inRange(v,t.elbowMin,t.elbowMax)))issues.elbowAngle={value:average(elbows),text:`มุมศอกประมาณ ${Math.round(average(elbows))}°`};const knees=[metrics.leftKnee,metrics.rightKnee].filter(Number.isFinite);if(knees.length&&!knees.every(v=>inRange(v,t.kneeMin,t.kneeMax)))issues.kneeAngle={value:average(knees),text:`มุมเข่าประมาณ ${Math.round(average(knees))}°`};const upper=[metrics.leftUpper,metrics.rightUpper].filter(Number.isFinite);if(upper.length&&upper.some(v=>v>t.upperArm))issues.upperArm={value:average(upper),text:'ต้นแขนหรือศอกห่างลำตัว'};if(baseline&&d.scaleRatio>1.32)issues.screenDistance={value:d.scaleRatio,text:'อยู่ใกล้กล้อง/จอมากกว่าท่ามาตรฐาน (เป็นค่าประมาณ)'};else if(baseline&&d.scaleRatio<.68)issues.screenDistance={value:d.scaleRatio,text:'อยู่ไกลกล้องจนจุดร่างกายอาจไม่ชัด (เป็นค่าประมาณ)'};const keys=Object.keys(issues);let score=100;const weights={forwardHead:20,headTilt:10,slouch:22,shoulderTilt:12,elbowAngle:12,kneeAngle:10,upperArm:8,screenDistance:6};keys.forEach(k=>score-=weights[k]||8);score=clamp(Math.round(score),0,100);return{state:keys.length?'bad':'good',score,issues,details:keys.map(k=>issues[k].text)};}
+
+function poseBox(pose){const pts=(pose?.keypoints||[]).filter(p=>visible(p,.18));if(!pts.length)return{x:0,y:0,width:0,height:0};const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);return{x:Math.min(...xs),y:Math.min(...ys),width:Math.max(...xs)-Math.min(...xs),height:Math.max(...ys)-Math.min(...ys)};}
+function drawPose(ctx,pose,state,label=''){const color=state==='good'?'#2ad18a':state==='warning'?'#f4b740':state==='bad'?'#ff5b66':'#9aa9b8';const map=keypointMap(pose);ctx.save();ctx.lineWidth=4;ctx.lineCap='round';ctx.strokeStyle=color;CONNECTIONS.forEach(([a,b])=>{if(visible(map[a],.22)&&visible(map[b],.22)){ctx.beginPath();ctx.moveTo(map[a].x,map[a].y);ctx.lineTo(map[b].x,map[b].y);ctx.stroke()}});(pose.keypoints||[]).forEach(p=>{if(!visible(p,.22))return;ctx.beginPath();ctx.fillStyle='#fff';ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.fillStyle=color;ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill()});if(label){const box=poseBox(pose);const x=box.x+box.width/2,y=Math.max(28,box.y-18);ctx.font='bold 18px sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(5,20,32,.82)';ctx.fillRect(x-42,y-16,84,32);ctx.fillStyle=color;ctx.fillText(label,x,y+6)}ctx.restore();}
+function drawAngles(ctx,pose){const m=keypointMap(pose);const items=[[m.left_elbow,calculateAngle(m.left_shoulder,m.left_elbow,m.left_wrist)],[m.right_elbow,calculateAngle(m.right_shoulder,m.right_elbow,m.right_wrist)],[m.left_knee,calculateAngle(m.left_hip,m.left_knee,m.left_ankle)],[m.right_knee,calculateAngle(m.right_hip,m.right_knee,m.right_ankle)]];ctx.save();ctx.font='bold 14px sans-serif';ctx.textAlign='center';items.forEach(([p,a])=>{if(!visible(p,.25)||!Number.isFinite(a))return;const text=Math.round(a)+'°';ctx.fillStyle='rgba(4,22,36,.78)';ctx.fillRect(p.x-24,p.y-30,48,22);ctx.fillStyle='#fff';ctx.fillText(text,p.x,p.y-14)});ctx.restore();}
+
+function processPoses(poses,timestamp){const video=$('video'),canvas=$('overlay');if(canvas.width!==video.videoWidth||canvas.height!==video.videoHeight){canvas.width=video.videoWidth;canvas.height=video.videoHeight}const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);const visiblePoses=(poses||[]).filter(p=>Number(p.score||calculateConfidence(p,['nose','left_shoulder','right_shoulder']))>.10);updateLighting(video);if(appMode==='classroom')processClassroom(visiblePoses,ctx,canvas,timestamp);else processPersonal(visiblePoses[0],ctx,canvas,timestamp);}
+function processPersonal(pose,ctx,canvas,timestamp){if(!pose){latestPersonal=null;latestReadiness={valid:false,missing:['ร่างกาย'],confidence:0};updateReadinessUi(null);if(sessionState==='running')tickSession('unknown',timestamp);updateStatus('unknown','ยังไม่พบร่างกาย');$('cameraMessage').textContent='ยังไม่พบร่างกาย กรุณาถอยกล้องและให้เห็นตั้งแต่ศีรษะถึงเข่า';return}const metrics=bodyMetrics(pose,canvas);latestPersonal=metrics;latestReadiness=metrics.visibility;const readiness=assessReadiness(metrics,canvas);updateReadinessUi(readiness);let evaluation={state:'unknown',score:0,issues:{},details:[]};if(metrics.valid&&(baseline||sessionState==='ready'||sessionState==='baseline'))evaluation=evaluatePosture(metrics);let drawState=metrics.valid?(evaluation.state==='bad'?'bad':'good'):'unknown';if(sessionState==='ready'&&!baseline)drawState='unknown';drawPose(ctx,pose,drawState);drawAngles(ctx,pose);$('confidenceChip').textContent='Confidence '+Math.round(metrics.confidence*100)+'%';if(baselineCapture)collectBaseline(metrics);if(sessionState==='running'){evaluation=evaluatePosture(metrics);const severity=updateIssueTrackers(evaluation.issues,timestamp);const state=metrics.valid?(Object.keys(evaluation.issues).length?'bad':'good'):'unknown';tickSession(state,timestamp);updateLiveEvaluation(evaluation,severity);checkTimeReminders();}else if(sessionState==='paused'){updateStatus('paused','หยุดการจับเวลาและประเมินชั่วคราว')}else if(!baseline){updateStatus('ready',readiness.ready?'พร้อมบันทึกท่ามาตรฐาน':'กรุณาปรับกล้องก่อน');$('cameraMessage').textContent=readiness.advice;}else{updateStatus('calibrated','บันทึกท่ามาตรฐานแล้ว กดเริ่มตรวจ');$('cameraMessage').textContent='พร้อมแล้ว กด “เริ่มตรวจ” เพื่อเริ่มจับเวลาและบันทึกผล';}}
+function processClassroom(poses,ctx,canvas,timestamp){const sorted=[...poses].sort((a,b)=>poseBox(a).x-poseBox(b).x).slice(0,MAX_CLASSROOM_POSES);let good=0,bad=0,unknown=0,totalScore=0,known=0,totalConfidence=0;const issueTotals={};sorted.forEach((pose,i)=>{const metrics=bodyMetrics(pose,canvas);totalConfidence+=metrics.confidence||0;if(!metrics.valid){unknown++;drawPose(ctx,pose,'unknown','P'+(i+1));return}const result=evaluatePosture(metrics,true);const state=Object.keys(result.issues).length?'bad':'good';if(state==='good')good++;else bad++;known++;totalScore+=result.score;Object.keys(result.issues).forEach(k=>issueTotals[k]=(issueTotals[k]||0)+1);drawPose(ctx,pose,state,'P'+(i+1));drawAngles(ctx,pose)});$('confidenceChip').textContent='Confidence '+Math.round((totalConfidence/Math.max(1,sorted.length))*100)+'%';const detected=sorted.length;const score=known?Math.round(totalScore/known):0;$('liveScore').textContent=score;$('scoreBar').style.width=score+'%';$('liveIssueList').innerHTML=`<div class="issue-item"><span>ตรวจพบทั้งหมด</span><b class="badge">${detected} คน</b></div><div class="issue-item"><span>ท่านั่งดี</span><b class="badge good">${good} คน</b></div><div class="issue-item"><span>ควรปรับ</span><b class="badge bad">${bad} คน</b></div><div class="issue-item"><span>ตรวจไม่ชัด</span><b class="badge gray">${unknown} คน</b></div>`;const readiness={ready:detected>0&&known>0,advice:detected?'จัดกล้องเพื่อลดการบังกัน และให้เห็นช่วงศีรษะถึงเข่า':'ยังไม่พบผู้เรียนในภาพ',light:currentBrightness>=45,body:known>0,distance:detected>0};updateReadinessUi(readiness);if(sessionState==='running'){stats.maxDetected=Math.max(stats.maxDetected,detected);stats.personFrames+=known;stats.goodPersonFrames+=good;stats.badPersonFrames+=bad;const activeClassIssues={};Object.keys(issueTotals).forEach(k=>{if(issueTotals[k]>0)activeClassIssues[k]={text:`พบ ${issueTotals[k]} คน`}});updateIssueTrackers(activeClassIssues,timestamp);tickSession(detected===0||known===0?'unknown':bad/known>.35?'bad':'good',timestamp);$('liveScore').textContent=score;$('scoreBar').style.width=score+'%';if(!detected)updateStatus('unknown','ยังไม่พบผู้เรียน');else if(bad/Math.max(1,known)>.35)updateStatus('bad',`ควรปรับ ${bad} จาก ${known} คน`);else updateStatus('good',`ท่านั่งดี ${good} จาก ${known} คน`);checkTimeReminders();}else{updateStatus('ready',readiness.advice);$('cameraMessage').textContent=readiness.advice;}}
+
+let currentBrightness=0,lastLightCheck=0;
+function updateLighting(video){const now=performance.now();if(now-lastLightCheck<900||!video.videoWidth)return;lastLightCheck=now;luminanceCanvas.width=64;luminanceCanvas.height=48;const ctx=luminanceCanvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(video,0,0,64,48);const data=ctx.getImageData(0,0,64,48).data;let sum=0;for(let i=0;i<data.length;i+=16)sum+=.2126*data[i]+.7152*data[i+1]+.0722*data[i+2];currentBrightness=sum/(data.length/16);$('lightChip').textContent=currentBrightness<45?'แสงน้อย':currentBrightness>225?'แสงจ้า':'แสงดี';}
+function assessReadiness(metrics,canvas){if(!metrics?.valid)return{ready:false,light:currentBrightness>=45,body:false,distance:false,advice:'กรุณาให้เห็นศีรษะ ไหล่ ศอก สะโพก และเข่าให้ชัด'};const light=currentBrightness>=45&&currentBrightness<=235;const body=metrics.confidence>=.4;const distance=metrics.bodyHeight>.32&&metrics.bodyHeight<.95;let advice='พร้อมตรวจ';if(!light)advice=currentBrightness<45?'กรุณาเพิ่มแสงหรือหันหน้าเข้าหาแหล่งแสง':'แสงจ้าเกินไป กรุณาลดแสงด้านหลัง';else if(!body)advice='จุดร่างกายยังไม่ชัด กรุณาปรับมุมกล้อง';else if(metrics.bodyHeight<=.32)advice='กรุณาเข้าใกล้กล้องเล็กน้อย หรือปรับกล้องให้เห็นร่างกายชัด';else if(metrics.bodyHeight>=.95)advice='กรุณาถอยกล้องอีกเล็กน้อย เพื่อให้เห็นศอก สะโพก และเข่า';return{ready:light&&body&&distance,light,body,distance,advice};}
+function updateReadinessUi(readiness){if(!readiness){$('readyLight').textContent='กำลังตรวจ';$('readyBody').textContent='ไม่พบ';$('readyDistance').textContent='ปรับกล้อง';return}$('readyLight').textContent=readiness.light?'ผ่าน':'ควรปรับ';$('readyBody').textContent=readiness.body?'ผ่าน':'ควรปรับ';$('readyDistance').textContent=readiness.distance?'ผ่าน':'ควรปรับ';$('readyAdvice').textContent=readiness.advice;$('baselineBtn').disabled=appMode==='personal'&&!readiness.ready;if(appMode==='classroom')$('runBtn').disabled=!readiness.ready;}
+
+function captureBaseline(){if(!latestPersonal?.valid){showToast('ยังตรวจจุดร่างกายไม่ชัด กรุณาปรับกล้องก่อน');return}baselineCapture={started:performance.now(),samples:[],lastSecond:4};sessionState='baseline';$('baselineBtn').disabled=true;addEvent('CALIBRATION','Baseline','info','เริ่มบันทึกท่ามาตรฐาน',0);}
+function collectBaseline(metrics){if(!baselineCapture||!metrics.valid)return;baselineCapture.samples.push(metrics);const elapsed=(performance.now()-baselineCapture.started)/1000;const remain=Math.max(0,Math.ceil(3-elapsed));if(remain!==baselineCapture.lastSecond){baselineCapture.lastSecond=remain;$('cameraMessage').textContent=remain?`นั่งในท่าที่ถูกต้อง... ${remain}`:'กำลังบันทึก';speakThai(String(remain||'พร้อม'))}if(elapsed>=3){const samples=baselineCapture.samples.slice(-30);if(samples.length<8){baselineCapture=null;sessionState='ready';$('baselineBtn').disabled=false;showToast('จุดร่างกายไม่ชัดพอระหว่างบันทึก กรุณาลองใหม่');return}const keys=['headTilt','shoulderTilt','torsoLean','headHorizontal','headHeight','torsoHeight','shoulderWidth'];baseline={};keys.forEach(k=>baseline[k]=average(samples.map(s=>s[k])));baselineCapture=null;sessionState='calibrated';$('baselineBtn').disabled=false;$('runBtn').disabled=false;updateStatus('calibrated','บันทึกท่ามาตรฐานเรียบร้อย');$('cameraMessage').textContent='บันทึกท่ามาตรฐานแล้ว กด “เริ่มตรวจ”';showToast('บันทึกท่ามาตรฐานเรียบร้อย');speakThai('บันทึกท่ามาตรฐานเรียบร้อย') }}
+$('baselineBtn').addEventListener('click',captureBaseline);
+
+function startSession(){if(appMode==='personal'&&!baseline){showToast('กรุณาบันทึกท่ามาตรฐานก่อนเริ่มตรวจ');return}stats=resetStats();resetTrackers();eventLog=[];startedAt=new Date();sessionId=uuid('SS');sessionState='running';lastTickAt=performance.now();$('runBtn').classList.add('hidden');$('baselineBtn').classList.add('hidden');$('pauseBtn').classList.remove('hidden');$('finishBtn').disabled=false;$('liveLabel').textContent=appMode==='classroom'?'LIVE CLASSROOM AI':'LIVE POSTURE AI';addEvent('SESSION','เริ่มตรวจ','info','เริ่ม Session',0);speakThai('เริ่มตรวจท่านั่งแล้ว');}
+$('runBtn').addEventListener('click',startSession);
+$('pauseBtn').addEventListener('click',()=>{sessionState='paused';$('pauseBtn').classList.add('hidden');$('resumeBtn').classList.remove('hidden');addEvent('SESSION','หยุดชั่วคราว','info','หยุดการตรวจชั่วคราว',0);showToast('หยุดชั่วคราวแล้ว')});
+$('resumeBtn').addEventListener('click',()=>{sessionState='running';lastTickAt=performance.now();$('resumeBtn').classList.add('hidden');$('pauseBtn').classList.remove('hidden');addEvent('SESSION','ทำงานต่อ','info','กลับมาตรวจต่อ',0);showToast('กลับมาตรวจต่อแล้ว')});
+
+function tickSession(state,timestamp){if(sessionState!=='running')return;const delta=clamp((timestamp-lastTickAt)/1000,0,.5);lastTickAt=timestamp;stats.totalSeconds+=delta;if(state==='good')stats.goodSeconds+=delta;else if(state==='bad')stats.badSeconds+=delta;else stats.unknownSeconds+=delta;$('sessionTime').textContent=formatTime(stats.totalSeconds);$('goodTime').textContent=formatTime(stats.goodSeconds);$('badTime').textContent=formatTime(stats.badSeconds);$('unknownTime').textContent=formatTime(stats.unknownSeconds);$('alertCount').textContent=stats.alertCount;}
+function updateIssueTrackers(activeIssues,timestamp){let maxSeverity='good';const warningMs=Number(serverSettings.WARNING_SECONDS||5)*1000,seriousMs=Number(serverSettings.SERIOUS_SECONDS||15)*1000,criticalMs=Number(serverSettings.CRITICAL_SECONDS||30)*1000,cooldownMs=Number(serverSettings.ALERT_COOLDOWN_SECONDS||20)*1000;Object.keys(issueTrackers).forEach(key=>{const tracker=issueTrackers[key],active=!!activeIssues[key];if(active){if(!tracker.active){tracker.active=true;tracker.activeSince=timestamp;tracker.lastCountAt=timestamp;stats.issueCounts[key]++;addEvent('POSTURE_ISSUE',ISSUE_META[key].label,'info',activeIssues[key].text||ISSUE_META[key].label,0)}const duration=timestamp-tracker.activeSince;if(duration>=criticalMs){maxSeverity='critical';if(timestamp-tracker.lastAlertAt>=cooldownMs){tracker.lastAlertAt=timestamp;stats.alertCount++;addEvent('POSTURE_ALERT',ISSUE_META[key].label,'critical',ISSUE_META[key].voice,Math.round(duration/1000));speakThai(ISSUE_META[key].voice);beep()}}else if(duration>=seriousMs&&maxSeverity!=='critical')maxSeverity='bad';else if(duration>=warningMs&&!['critical','bad'].includes(maxSeverity))maxSeverity='warning';if(timestamp-tracker.lastCountAt>=cooldownMs){tracker.lastCountAt=timestamp;stats.issueCounts[key]++}}else{tracker.active=false;tracker.activeSince=0}});return maxSeverity;}
+function updateLiveEvaluation(result,severity){$('liveScore').textContent=result.score;$('scoreBar').style.width=result.score+'%';const keys=Object.keys(result.issues);if(!keys.length){$('liveIssueList').innerHTML='<div class="issue-item"><span>ไม่พบปัญหาชัดเจน</span><b class="badge good">ท่าดี</b></div>';updateStatus('good','รักษาท่านั่งนี้ไว้');$('cameraMessage').textContent='เยี่ยมมาก รักษาท่านั่งนี้และเปลี่ยนอิริยาบถเป็นระยะ';return}$('liveIssueList').innerHTML=keys.map(k=>{const tracker=issueTrackers[k],duration=tracker.activeSince?Math.round((performance.now()-tracker.activeSince)/1000):0;const cls=duration>=30?'bad':duration>=5?'warn':'gray';return`<div class="issue-item"><span>${escapeHtml(result.issues[k].text)}</span><b class="badge ${cls}">${duration} วิ.</b></div>`}).join('');if(severity==='critical'||severity==='bad')updateStatus('bad',keys.map(k=>ISSUE_META[k].label).join(' · '));else if(severity==='warning')updateStatus('warning','เริ่มควรปรับ: '+keys.map(k=>ISSUE_META[k].label).join(' · '));else updateStatus('attention','ตรวจพบเล็กน้อย กำลังติดตาม');$('cameraMessage').textContent='คำแนะนำ: '+keys.slice(0,2).map(k=>ISSUE_META[k].advice).join(' · ');}
+function updateStatus(type,detail=''){const map={ready:['📷','ตรวจความพร้อม',detail],calibrated:['✅','พร้อมเริ่มตรวจ',detail],good:['😊','ท่านั่งดี',detail],attention:['🔎','กำลังติดตาม',detail],warning:['⚠️','เริ่มควรปรับ',detail],bad:['😟','ควรปรับท่า',detail],unknown:['📷','ตรวจไม่ชัด',detail],paused:['⏸️','หยุดชั่วคราว',detail]};const s=map[type]||map.ready;$('statusIcon').textContent=s[0];$('statusTitle').textContent=s[1];$('statusDesc').textContent=s[2]||'';}
+function addEvent(eventType,issue,severity,message,durationSeconds=0){eventLog.push({eventId:uuid('EVT'),sessionId,eventTime:new Date().toISOString(),eventType,issue,severity,message,durationSeconds});if(eventLog.length>250)eventLog.shift();}
+function checkTimeReminders(){const t=stats.totalSeconds;const eye=Number(serverSettings.EYE_BREAK_SECONDS||600),posture=Number(serverSettings.POSTURE_BREAK_SECONDS||1200),stretch=Number(serverSettings.STRETCH_BREAK_SECONDS||3600);if(t>=eye*(stats.eyeBreakCount+1)){stats.eyeBreakCount++;addEvent('TIME_REMINDER','พักสายตา','info','พักสายตาได้แล้ว',0);speakThai('พักสายตาได้แล้ว')}if(t>=posture*(stats.postureBreakCount+1)){stats.postureBreakCount++;addEvent('TIME_REMINDER','เปลี่ยนอิริยาบถ','warning','ถึงเวลาเปลี่ยนอิริยาบถ',0);speakThai('ถึงเวลาเปลี่ยนอิริยาบถ')}if(t>=stretch*(stats.stretchBreakCount+1)){stats.stretchBreakCount++;addEvent('TIME_REMINDER','ยืดเหยียด','warning','ถึงเวลายืดเหยียดกล้ามเนื้อ',0);speakThai('ถึงเวลายืดเหยียดกล้ามเนื้อ')}}
+
+function speakThai(text){if(!localSettings.soundEnabled)return;if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='th-TH';u.volume=Number(localSettings.volume);u.rate=Number(localSettings.speechRate);const thai=speechSynthesis.getVoices().find(v=>/th/i.test(v.lang));if(thai)u.voice=thai;speechSynthesis.speak(u)}else beep();}
+function beep(){if(!localSettings.soundEnabled)return;try{const A=window.AudioContext||window.webkitAudioContext,ctx=new A(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.frequency.value=700;gain.gain.value=.06*Number(localSettings.volume);osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.22)}catch(e){console.warn(e)}}
+$('soundBtn').addEventListener('click',()=>{localSettings.soundEnabled=!localSettings.soundEnabled;localStorage.setItem('smartsitSettings',JSON.stringify(localSettings));$('soundBtn').textContent=localSettings.soundEnabled?'🔊 เปิดเสียง':'🔇 ปิดเสียง';showToast(localSettings.soundEnabled?'เปิดเสียงแจ้งเตือนแล้ว':'ปิดเสียงแจ้งเตือนแล้ว')});
+$('testSoundBtn').addEventListener('click',()=>{localSettings.soundEnabled=$('setSound').value==='on';localSettings.volume=Number($('setVolume').value);localSettings.speechRate=Number($('setRate').value);speakThai('ทดสอบเสียง SmartSit AR Coach')});
+
+async function finishSession(){if(!startedAt){showToast('ยังไม่ได้เริ่มตรวจ');return}sessionState='finished';stopMainCamera(false);const endedAt=new Date();const detected=stats.goodSeconds+stats.badSeconds;const coverage=detected/Math.max(1,stats.totalSeconds);const score=appMode==='classroom'?(stats.personFrames?Math.round(stats.goodPersonFrames/stats.personFrames*100):0):Math.round(stats.goodSeconds/Math.max(1,detected)*100);const ranking=Object.entries(stats.issueCounts).sort((a,b)=>b[1]-a[1]);const mainKey=ranking[0]?.[1]>0?ranking[0][0]:'';const mainIssue=mainKey?ISSUE_META[mainKey].label:'ไม่พบปัญหาเด่น';const advice=mainKey?ISSUE_META[mainKey].advice:'รักษาท่านั่งที่สมดุลและเปลี่ยนอิริยาบถเป็นระยะ';pendingPayload={sessionId,appMode,userId:userData.userId,name:userData.name,age:userData.age,role:userData.role,activityMode:userData.activityMode,organization:userData.organization,className:userData.className,deviceType:userData.deviceType,cameraType:userData.cameraType,cameraAngle:angleLabel(userData.cameraAngle),totalSeconds:Math.round(stats.totalSeconds),goodSeconds:Math.round(stats.goodSeconds),badSeconds:Math.round(stats.badSeconds),unknownSeconds:Math.round(stats.unknownSeconds),score,alertCount:stats.alertCount,mainIssue,forwardHeadCount:stats.issueCounts.forwardHead,slouchCount:stats.issueCounts.slouch,shoulderTiltCount:stats.issueCounts.shoulderTilt,elbowAngleIssueCount:stats.issueCounts.elbowAngle,kneeAngleIssueCount:stats.issueCounts.kneeAngle,screenDistanceIssueCount:stats.issueCounts.screenDistance,eyeBreakCount:stats.eyeBreakCount,postureBreakCount:stats.postureBreakCount,stretchBreakCount:stats.stretchBreakCount,improvementAdvice:advice,startedAt:startedAt.toISOString(),endedAt:endedAt.toISOString(),notes:`Coverage ${Math.round(coverage*100)}% · Browser ${navigator.userAgent.slice(0,180)}`};eventLog.forEach(e=>e.sessionId=sessionId);renderSummary(pendingPayload,coverage,ranking);showScreen('summaryScreen');await saveCurrentResult();}
+$('finishBtn').addEventListener('click',finishSession);
+function angleLabel(value){return value==='side'?'มุมด้านข้าง':value==='diagonal'?'มุมเฉียง 45 องศา':'มุมตรง';}
+async function saveCurrentResult(){if(!pendingPayload)return;setSummarySaveState('saving');try{await serverCall('saveSession',pendingPayload);if(eventLog.length){for(let i=0;i<eventLog.length;i+=12)await serverCall('saveEvents',eventLog.slice(i,i+12));}setSummarySaveState('saved');localStorage.removeItem('smartsitPending');showToast('บันทึกผลลง Google Sheets แล้ว')}catch(error){console.error(error);setSummarySaveState('failed',error.message);localStorage.setItem('smartsitPending',JSON.stringify({payload:pendingPayload,events:eventLog}));showToast('บันทึกชีตไม่สำเร็จ: '+error.message+' กรุณาตรวจ Deployment /exec แล้วกดบันทึกใหม่',10000)}}
+function setSummarySaveState(state,error=''){const badge=$('saveBadge'),retry=$('retrySaveBtn');if(state==='saved'){badge.className='badge good';badge.textContent='บันทึกลง Google Sheets แล้ว';retry.classList.add('hidden')}else if(state==='failed'){badge.className='badge bad';badge.textContent='บันทึกไม่สำเร็จ'+(error?' · '+error:'');retry.classList.remove('hidden')}else{badge.className='badge warn';badge.textContent='กำลังบันทึกผล';retry.classList.add('hidden')}}
+$('retrySaveBtn').addEventListener('click',saveCurrentResult);
+function renderSummary(payload,coverage,ranking){$('summaryIdentity').textContent=`${payload.name}${payload.organization?' · '+payload.organization:''} · ${thaiDate(payload.startedAt)} ถึง ${thaiDate(payload.endedAt)}`;$('finalScore').textContent=payload.score;$('scoreRing').style.background=`conic-gradient(var(--primary) ${payload.score*3.6}deg,#e8eef5 0)`;const enough=coverage>=Number(serverSettings.MIN_DATA_COVERAGE||.5);$('summaryStatus').textContent=!enough?'ข้อมูลไม่เพียงพอ':payload.score>=90?'ยอดเยี่ยมมาก':payload.score>=75?'ภาพรวมอยู่ในระดับดี':'ควรปรับท่าและตำแหน่งกล้องต่อเนื่อง';$('summaryCoverage').textContent=`ตรวจได้ชัด ${Math.round(coverage*100)}% ของเวลาทั้งหมด${enough?'':' — ควรปรับกล้องและตรวจใหม่'}`;$('sumTotal').textContent=formatTime(payload.totalSeconds);$('sumGood').textContent=formatTime(payload.goodSeconds);$('sumBad').textContent=formatTime(payload.badSeconds);$('sumUnknown').textContent=formatTime(payload.unknownSeconds);$('sumAlerts').textContent=payload.alertCount;$('sumSessionId').textContent=payload.sessionId;$('strengthText').textContent=payload.goodSeconds>=payload.badSeconds?'สามารถรักษาท่าที่ตรวจได้ว่าเหมาะสมได้นานกว่าช่วงที่ควรปรับ และมีข้อมูลเพียงพอสำหรับติดตามแนวโน้ม':'มีการใช้งานระบบจนได้ข้อมูลจริงสำหรับวางเป้าหมายครั้งต่อไป';$('improvementText').textContent=payload.improvementAdvice;$('goalText').textContent=payload.mainIssue==='ไม่พบปัญหาเด่น'?'รักษาอัตราท่าดีอย่างน้อย 80% และเปลี่ยนอิริยาบถตามเวลา':`ลดการเกิด “${payload.mainIssue}” และตั้งเป้าเวลาท่าดีอย่างน้อย 80%`;$('summaryIssueBody').innerHTML=ranking.filter(r=>r[1]>0).map(([k,c])=>`<tr><td>${escapeHtml(ISSUE_META[k].label)}</td><td>${c}</td><td>${escapeHtml(ISSUE_META[k].advice)}</td></tr>`).join('')||'<tr><td colspan="3">ไม่พบปัญหาเด่น</td></tr>';}
+$('downloadFallbackBtn').addEventListener('click',()=>{if(pendingPayload)downloadCsv([pendingPayload],'smartsit_'+pendingPayload.sessionId+'.csv')});
+$('restartBtn').addEventListener('click',()=>{pendingPayload=null;baseline=null;showScreen('setupScreen')});
+$('summaryReportBtn').addEventListener('click',()=>{$('reportUserId').value=userData.userId||'';showScreen('reportScreen');loadReport()});
+
+async function loadReport(){const userId=$('reportUserId').value.trim();if(!userId){showToast('กรุณากรอกรหัสผู้ใช้หรือรหัสการทดลอง');return}setLoading(true,'กำลังอ่านรายงานจาก Google Sheets...',30);try{await ensureChartOnly();const data=await serverCall('getReportData',{userId,appMode:$('reportMode').value,organization:$('reportOrg').value.trim(),className:$('reportClass').value.trim(),dateFrom:$('reportFrom').value,dateTo:$('reportTo').value});reportRows=data.sessions||[];renderReport(data.summary||{},reportRows);setLoading(false)}catch(error){setLoading(false);reportRows=[];$('reportBody').innerHTML=`<tr><td colspan="13" class="empty-state">อ่านข้อมูลไม่สำเร็จ: ${escapeHtml(error.message)}</td></tr>`;showToast('อ่านรายงานไม่สำเร็จ: '+error.message,7000)}}
+async function ensureChartOnly(){if(!window.Chart)await loadScriptFallback(['https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js','https://unpkg.com/chart.js@4.4.7/dist/chart.umd.min.js'],'Chart.js');}
+$('loadReportBtn').addEventListener('click',loadReport);$('resetReportBtn').addEventListener('click',()=>{['reportUserId','reportOrg','reportClass','reportFrom','reportTo'].forEach(id=>$(id).value='');$('reportMode').value='all';reportRows=[];renderReport({},[])});$('printReportBtn').addEventListener('click',()=>window.print());$('exportReportBtn').addEventListener('click',()=>{if(!reportRows.length){showToast('ยังไม่มีข้อมูลสำหรับส่งออก');return}downloadCsv(reportRows,'SmartSit_Report_'+$('reportUserId').value.trim()+'.csv')});
+function renderReport(summary={},rows=[]){$('kpiSessions').textContent=summary.sessionCount||0;$('kpiScore').textContent=summary.averageScore||0;$('kpiTotal').textContent=formatMinutes(summary.totalSeconds);$('kpiGood').textContent=formatMinutes(summary.goodSeconds);$('kpiBad').textContent=formatMinutes(summary.badSeconds);$('kpiUnknown').textContent=formatMinutes(summary.unknownSeconds);$('kpiAlerts').textContent=summary.alertCount||0;$('frequentIssueText').textContent='พบบ่อย: '+(summary.frequentIssue||'ไม่พบข้อมูล');$('reportCount').textContent=`พบ ${rows.length} รายการ`;$('reportBody').innerHTML=rows.length?rows.map(row=>`<tr><td>${thaiDate(row.StartedAt||row.SavedAt)}</td><td>${escapeHtml(row.SessionID)}</td><td>${row.AppMode==='classroom'?'ห้องเรียน':'ส่วนบุคคล'}</td><td>${escapeHtml(row.Name||row.Organization||'–')}</td><td>${escapeHtml(row.ActivityMode||row.ClassName||'–')}</td><td>${formatTime(row.TotalSeconds)}</td><td><span class="score-tag ${Number(row.Score)>=85?'score-high':Number(row.Score)>=70?'score-mid':'score-low'}">${row.Score}</span></td><td>${formatTime(row.GoodSeconds)}</td><td>${formatTime(row.BadSeconds)}</td><td>${formatTime(row.UnknownSeconds)}</td><td>${row.AlertCount||0}</td><td>${escapeHtml(row.MainIssue||'–')}</td><td><button class="btn btn-sm btn-soft" onclick="openSessionDetail('${escapeHtml(row.SessionID)}')">ดูรายละเอียด</button></td></tr>`).join(''):'<tr><td colspan="13" class="empty-state">ไม่พบข้อมูลตามตัวกรอง</td></tr>';renderReportCharts(summary,rows);}
+function renderReportCharts(summary,rows){if(!window.Chart)return;if(scoreChart)scoreChart.destroy();if(issueChart)issueChart.destroy();const ordered=[...rows].sort((a,b)=>new Date(a.StartedAt)-new Date(b.StartedAt));scoreChart=new Chart($('scoreChart'),{type:'line',data:{labels:ordered.map(r=>new Date(r.StartedAt||r.SavedAt).toLocaleDateString('th-TH')),datasets:[{label:'คะแนน',data:ordered.map(r=>Number(r.Score||0)),tension:.3,fill:false,borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:100}}}});const it=summary.issueTotals||{};issueChart=new Chart($('issueChart'),{type:'bar',data:{labels:['คอ/ศีรษะ','หลัง/ลำตัว','ไหล่','ศอก','เข่า','ระยะ'],datasets:[{label:'จำนวนครั้ง',data:[it.forwardHead||0,it.slouch||0,it.shoulderTilt||0,it.elbowAngle||0,it.kneeAngle||0,it.screenDistance||0]}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});}
+async function openSessionDetail(id){$('detailModal').classList.add('open');$('modalSessionId').textContent=id;$('modalBody').innerHTML='<div class="empty-state">กำลังโหลดรายละเอียด...</div>';try{const data=await serverCall('getSessionDetail',id);const s=data.session||{},events=data.events||[];$('modalBody').innerHTML=`<div class="detail-grid">${[['ผู้ใช้',s.Name],['รหัสผู้ใช้',s.UserID],['โหมด',s.AppMode==='classroom'?'ห้องเรียน':'ส่วนบุคคล'],['เริ่ม',thaiDate(s.StartedAt)],['สิ้นสุด',thaiDate(s.EndedAt)],['คะแนน',s.Score],['เวลารวม',formatTime(s.TotalSeconds)],['ท่าดี',formatTime(s.GoodSeconds)],['ควรปรับ',formatTime(s.BadSeconds)],['ไม่ชัด',formatTime(s.UnknownSeconds)],['Alert',s.AlertCount],['ปัญหาหลัก',s.MainIssue],['คำแนะนำ',s.ImprovementAdvice],['อุปกรณ์',s.DeviceType],['มุมกล้อง',s.CameraAngle]].map(([a,b])=>`<div class="detail-item"><span>${a}</span><b>${escapeHtml(b||'–')}</b></div>`).join('')}</div><h3>เหตุการณ์ที่บันทึก</h3><div class="event-list">${events.length?events.map(e=>`<div class="event-row"><span>${thaiDate(e.EventTime)}</span><b>${escapeHtml(e.EventType)}</b><span>${escapeHtml(e.Message||e.Issue)}</span><span class="badge ${e.Severity==='critical'?'bad':e.Severity==='warning'?'warn':'gray'}">${escapeHtml(e.Severity)}</span></div>`).join(''):'<div class="empty-state">ไม่มี Event ที่บันทึก</div>'}</div>`}catch(e){$('modalBody').innerHTML=`<div class="empty-state">โหลดรายละเอียดไม่สำเร็จ: ${escapeHtml(e.message)}</div>`}}
+window.openSessionDetail=openSessionDetail;$('closeModalBtn').addEventListener('click',()=>$('detailModal').classList.remove('open'));$('detailModal').addEventListener('click',e=>{if(e.target===$('detailModal'))$('detailModal').classList.remove('open')});
+function downloadCsv(rows,filename){if(!rows?.length)return;const headers=Array.from(new Set(rows.flatMap(r=>Object.keys(r))));const csv='\ufeff'+[headers.join(','),...rows.map(r=>headers.map(h=>'"'+String(r[h]??'').replace(/"/g,'""')+'"').join(','))].join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+
+async function openTestCamera(){stopTestCamera();localSettings={...localSettings,facingMode:$('setFacing').value,resolution:$('setResolution').value,deviceId:$('cameraDevice').value,cameraAngle:$('setAngle').value,sensitivity:$('setSensitivity').value};try{testStream=await openStream($('testVideo'),localSettings);$('setPermission').textContent='อนุญาตแล้ว';$('testMessage').textContent='กล้องทำงานแล้ว กดตรวจแสงและจุดร่างกาย';await enumerateCameras()}catch(e){$('setPermission').textContent='ไม่สำเร็จ';$('testMessage').textContent=cameraError(e);showToast(cameraError(e),7000)}}
+function stopTestCamera(){if(testStream){testStream.getTracks().forEach(t=>t.stop());testStream=null}$('testVideo').srcObject=null;}
+$('testCameraBtn').addEventListener('click',openTestCamera);$('closeTestCameraBtn').addEventListener('click',()=>{stopTestCamera();$('testMessage').textContent='หยุดกล้องแล้ว'});
+async function checkTestReadiness(){if(!testStream){showToast('กรุณาเปิดกล้องทดสอบก่อน');return}setLoading(true,'กำลังตรวจแสงและจุดร่างกาย...',35);try{await ensureLibraries();const video=$('testVideo');luminanceCanvas.width=64;luminanceCanvas.height=48;const c=luminanceCanvas.getContext('2d',{willReadFrequently:true});c.drawImage(video,0,0,64,48);const d=c.getImageData(0,0,64,48).data;let sum=0;for(let i=0;i<d.length;i+=16)sum+=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];const bright=sum/(d.length/16);const poses=await detector.estimatePoses(video,{maxPoses:1,flipHorizontal:false});const pose=poses[0],vis=pose?evaluateVisibility(pose,$('setAngle').value):null;$('setBrightness').textContent=bright<45?'แสงน้อย':bright>235?'แสงจ้าเกินไป':'แสงเหมาะสม';$('setLandmarks').textContent=vis?.valid?`ตรวจได้ ${Math.round(vis.confidence*100)}%`:'ยังเห็นจุดไม่ครบ';const ready=bright>=45&&bright<=235&&vis?.valid;$('setOverall').textContent=ready?'พร้อมตรวจ':'ควรปรับกล้อง/แสง';$('testMessage').textContent=ready?'พร้อมตรวจท่านั่ง':'กรุณาปรับแสง ระยะ หรือมุมกล้อง';setLoading(false)}catch(e){setLoading(false);showToast('ตรวจความพร้อมไม่สำเร็จ: '+e.message,7000)}}
+$('checkReadyBtn').addEventListener('click',checkTestReadiness);
+
+function init(){applySavedUser();loadLocalSettings();$('adminWarning').classList.toggle('show',!isApiConfigured()&&!(window.google&&google.script&&google.script.run));if(isApiConfigured()||window.google?.script?.run){serverCall('getSettings').then(s=>serverSettings={...serverSettings,...s}).catch(e=>console.warn(e))}const pending=JSON.parse(localStorage.getItem('smartsitPending')||'null');if(pending?.payload)showToast('พบผลที่ยังบันทึกไม่สำเร็จจากครั้งก่อน สามารถตรวจใหม่หรือเปิดหน้าสรุปภายหลังได้',7000);$('reportUserId').value=JSON.parse(localStorage.getItem('smartsitUser')||'{}').userId||'';}
+window.addEventListener('beforeunload',()=>{stopMainCamera(false);stopTestCamera()});window.addEventListener('pagehide',()=>{stopMainCamera(false);stopTestCamera()});
 init();
-
-</script></body></html>
+</script>
+</body>
+</html>
