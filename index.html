@@ -86,6 +86,47 @@ body{background:linear-gradient(180deg,#edf6ff 0,#f8fbff 250px,#f3f7fb 100%)}
   .setup-action-row .btn{min-height:48px;padding:10px 6px;font-size:13px}
   .backend-state{order:2;margin-top:9px;font-size:10.5px;line-height:1.4}
 }
+
+
+/* ===== Mobile camera controls 4.2 =====
+   จัดปุ่มเป็น 2 ปุ่มต่อแถว ลดความแออัด และซ่อนปุ่มจบก่อนเริ่มตรวจ */
+@media(max-width:620px){
+  .camera-message{
+    bottom:132px;
+  }
+  .primary-controls{
+    bottom:8px;
+    left:8px;
+    right:8px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:8px;
+    align-items:stretch;
+  }
+  .primary-controls .btn,
+  .primary-controls #baselineBtn,
+  .primary-controls #runBtn,
+  .primary-controls #pauseBtn,
+  .primary-controls #resumeBtn,
+  .primary-controls #finishBtn,
+  .primary-controls #soundBtn,
+  .primary-controls #stopCameraBtn{
+    grid-column:auto;
+    width:100%;
+    min-width:0;
+    min-height:52px;
+    padding:9px 8px;
+    border-radius:14px;
+    font-size:12px;
+    line-height:1.25;
+    white-space:normal;
+  }
+  /* ก่อนเริ่มตรวจ ปุ่มจบยังใช้ไม่ได้ จึงไม่แสดงเพื่อไม่ให้หน้าจอแน่น */
+  .primary-controls #finishBtn:disabled{
+    display:none;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -175,13 +216,13 @@ body{background:linear-gradient(180deg,#edf6ff 0,#f8fbff 250px,#f3f7fb 100%)}
 <div class="camera-top"><div class="live-pill"><span class="live-dot"></span><span id="liveLabel">CAMERA READY</span></div><div class="quality-row"><span class="quality-chip" id="fpsChip">FPS 0</span><span class="quality-chip" id="confidenceChip">ความชัด 0%</span><span class="quality-chip" id="lightChip">แสง –</span></div></div>
 <div class="camera-message" id="cameraMessage">กำลังเตรียมกล้องและ AI...</div>
 <div class="camera-controls primary-controls">
-<button class="btn btn-soft" id="baselineBtn" type="button">1. ตั้งท่ามาตรฐาน</button>
-<button class="btn btn-primary" disabled="" id="runBtn" type="button">2. เริ่มตรวจ</button>
+<button class="btn btn-soft" id="baselineBtn" type="button">ตั้งท่ามาตรฐาน</button>
+<button class="btn btn-primary" disabled="" id="runBtn" type="button">เริ่มตรวจ</button>
 <button class="btn btn-warning hidden" id="pauseBtn" type="button">พัก</button>
 <button class="btn btn-good hidden" id="resumeBtn" type="button">ทำต่อ</button>
 <button class="btn btn-danger" disabled="" id="finishBtn" type="button">จบและบันทึก</button>
 <button aria-label="เปิดหรือปิดเสียง" class="btn btn-light btn-icon" id="soundBtn" type="button">🔊</button>
-<button aria-label="หยุดกล้อง" class="btn btn-light btn-icon" id="stopCameraBtn" type="button">⏹</button>
+<button aria-label="หยุดกล้อง" class="btn btn-light btn-icon" id="stopCameraBtn" type="button">⏹ หยุดกล้อง</button>
 </div>
 </div>
 <aside class="side-stack friendly-side">
